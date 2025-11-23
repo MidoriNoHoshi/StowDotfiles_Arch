@@ -1,16 +1,19 @@
 These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before trying to learn AGS (Aylur's GTK Shell), I wanted to move everything onto Github before I fuck everything up.
 
 ### Setup:
-OS (Operating System): Arch Linux
-WM (Window Manager): Hyprland
-Terminal: Kitty
-Launcher: Fuzzel
-Notification Daemon: Dunst
-Key remapping: KMonad
-Editor: Neovim
-Internet Browser: Zen Browser
-File Manager: Nemo, Ranger
-IME (Input Method Editor): fcitx5
+
+| Ingredient            | Flavour        |
+|---------------------|----------------|
+| OS (Operating System)                  | Arch Linux     |
+| WM (Windows Manager)                 | Hyprland       |
+| Terminal            | Kitty          |
+| Launcher            | Fuzzel         |
+| Notification Daemon       | Dunst          |
+| Key Remapping       | KMonad         |
+| Editor              | Neovim         |
+| Internet Browser             | Zen Browser    |
+| File Managers       | Nemo, Ranger   |
+| IME (Input Method Editor)  | fcitx5  |
 
 (Custom scripts using dunst replacing a information bar).
 
