@@ -69,3 +69,49 @@ systemctl --user start batteryNotif1m.timer
 ssh-keygen -t ed25519 -C <Email>
 ssh-add ~/.ssh/id_ed25519
 ```
+
+---
+
+## Keybindings
+
+- **Ctrl + `** => Quick phrase. Only appears if the keybinding is pressed while typing.
+- **f7** => When writing in Japanese, turns text into Katakana (カタカナ).
+
+#### KMonad remapping:
+
+- **Capslock** => SUPER
+- **Ctrl** => Tab
+- **Tab** => Ctrl
+- **Super / Meta** => Esc
+
+#### Script function keys:
+
+- **f12** => Information key. Date and time, Wifi connection, Battery status.
+- **f9** => Hyprpicker (Colour picker).
+
+- **print** => Hyprshot (screenshot).
+- **PickupPhone** => Decreases mouse sensitivity.
+- **HangupPhone** => Increases mouse sensitivity.
+
+#### Hyprland keybindings:
+
+- **Super + Q** => launches terminal (kitty)
+- **Super + C** => killactive
+- **Super + I** => launches zen browser (Internet browser)
+- **Super + E** => launches Nemo (File manager) 
+- **Super + V** => Toggle floating
+- **Super + R** => Startup fuzzel (launcher)
+- **Super + A** => launches Anki (Anki review cards)
+- **Super + P** => pseudo (dwindle) focused tile
+
+- **Super + h, l, k, j** => move focus to another tile. h for left, l for right, k for above, j for below.
+
+- **Super + 1 ~ 0** => switch to workspace 1 ~ 10
+- **Super + Shift + 1 ~ 0** => move focused tile to workspace 1 ~ 10
+- **Super + S** => toggle "special" workspace
+- **Super + Shift + S** => move focused tile to "special" workspace
+
+#### fctix5
+
+- **Ctrl + Space** => Toggle Input Method + Enumerate Input Method
+- **Ctrl + Shift + Space** => Enumerate Input Method Backwards
