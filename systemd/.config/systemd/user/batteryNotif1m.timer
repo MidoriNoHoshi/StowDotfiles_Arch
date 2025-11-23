@@ -1,0 +1,10 @@
+[Unit]
+Description=Battery Warning Notification (every 1 minutes below 10%)
+
+[Timer]
+OnBootSec=2min
+OnUnitActiveSec=5min
+Unit=batteryNotif.service
+
+[Install]
+WantedBy=timers.target

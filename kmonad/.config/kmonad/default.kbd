@@ -1,0 +1,25 @@
+(defcfg
+  input (device-file "/dev/input/by-path/platform-i8042-serio-0-event-kbd")
+  output (uinput-sink "Kmonad output")
+  fallthrough true
+  allow-cmd false
+)
+
+(defsrc
+  esc
+  grv
+  tab
+  caps
+  lsft
+  wkup lctl lmet lalt
+)
+
+(deflayer main
+  _
+  _
+  lctrl
+  lmet
+  _
+  _    tab    esc    _
+)
+

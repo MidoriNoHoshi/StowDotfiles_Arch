@@ -1,0 +1,5 @@
+[Unit]
+Description=Low Battery Warning Notification
+
+[Service]
+ExecStart=%h/Linux-Information-Notification-Scripts/lowBatteryNotif.sh

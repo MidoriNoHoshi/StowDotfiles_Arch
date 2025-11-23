@@ -1,0 +1,11 @@
+anki
+bibata-cursor-theme-bin
+emote
+markdown-oxide-git
+onlyoffice-bin
+qimgv
+qimgv-debug
+ttf-martian-mono
+wireguard-go-git
+yay
+zen-browser-bin
