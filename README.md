@@ -15,39 +15,54 @@ IME (Input Method Editor): fcitx5
 (Custom scripts using dunst replacing a information bar).
 
 ---
+
 ### installation
-<!-- Clone the repository: -->
+> Clone the repository:
+```bash
 sudo pacman -S stow
 git clone: ~/dotfiles
 cd ~/dotfiles
+```
 
-<!-- Install Packages -->
+> Install Packages
+```bash
 stow *
+```
 
-#### Other Configurations
+---
 
-##### Fcitx5
+### Other Configurations
+
+#### Fcitx5
 Need to be re-installed through fcitx5 configuration tool
 - fcitx5-mozc (Japanese)
 - fcitx5-English (US)
 - fcitx5-Norwegian (bokmål)
 
-##### Installing pacman and yay packages
+#### Installing pacman and yay packages
+```bash
 sudo pacman -S --needed - < pkglist.txt
 yay -S --needed - < aurlist.txt
+```
 
-##### ly display manager
+#### ly display manager
+```bash
 sudo systemctl enable ly.service
 sudo systemctl start ly.service
+```
 
-##### systemd services for notification scripts
+#### systemd services for notification scripts
+```bash
 systemctl --user daemon-reload
 systemctl --user enable batteryNotif5m.timer
 systemctl --user enable batteryNotif1m.timer
 systemctl --user start batteryNotif5m.timer
 systemctl --user start batteryNotif1m.timer
+```
 
-##### Keys
-<!-- SSH Keys -->
+#### Keys
+> SSH Keys
+```bash
 ssh-keygen -t ed25519 -C <Email>
 ssh-add ~/.ssh/id_ed25519
+```
