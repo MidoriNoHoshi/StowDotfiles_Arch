@@ -1,6 +1,6 @@
 These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before trying to learn AGS (Aylur's GTK Shell), I wanted to move everything onto Github before I fuck everything up.
 
-### Setup:
+# Setup:
 
 | Ingredient                | Flavour      |
 | ------------------------- | ------------ |
@@ -19,7 +19,7 @@ These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before
 
 ---
 
-### installation
+# installation
 > Clone the repository:
 ```bash
 sudo pacman -S stow
@@ -34,40 +34,58 @@ stow *
 
 ---
 
-### Other Configurations
+# Other Configurations
 
-#### Fcitx5
+## Fcitx5
 Need to be re-installed through fcitx5 configuration tool
 - fcitx5-mozc (Japanese)
 - fcitx5-English (US)
 - fcitx5-Norwegian (bokmål)
 
-#### KMonad (Pain in the ass)
+## KMonad (Pain in the ass)
 KMonad config file in `/home/$USER/.config/kmonad` as default.kbd
 
-The input for default.kbd is found in `/dev/input`. There are two directories in here to look at. 
-by-id/ directory is for devices connected externally.
-by-path/ contains symlinks based on the physical path through the system bus (integrated devices).
-Execute: `cat /proc/bus/input/devices` to identify the keyboard symlink.
-Then write the kmonad.service file in `/etc/systemd/system/`. Ensure 'ExecStart' points to both the KMonad executable at `/usr/bin/kmonad` and the default.kbd file (in `/home/$USER/.config/kmonad`).
+The input for default.kbd is found in `/dev/input`. There are two directories in here to look at.<br>
+`by-id/` directory is for devices connected externally.<br>
+`by-path/` contains symlinks based on the physical path through the system bus (integrated devices).<br>
+Execute: `cat /proc/bus/input/devices` to identify the keyboard symlink.<br>
+Then write the kmonad.service file in `/etc/systemd/system/`. Ensure 'ExecStart' points to both the KMonad executable at `/usr/bin/kmonad` and the default.kbd file (in `/home/$USER/.config/kmonad`).<br>
+My `/etc/systemd/system/kmonad.service` file:
+
+```
+[Unit]
+Description=KMonad keyboard remapping
+After=graphical-session.target
+
+[Service]
+ExecStart=/usr/bin/kmonad %h/.config/kmonad/default.kbd
+Restart=on-failure
+
+[Install]
+WantedBy=default.target
+```
+
 Start the service:
+
 ```bash
 sudo systemctl enable --now kmonad.service
 ```
 
-#### Installing pacman and yay packages
+
+
+## Installing pacman and yay packages
 ```bash
 sudo pacman -S --needed - < pkglist.txt
 yay -S --needed - < aurlist.txt
 ```
 
-#### ly display manager
+### ly display manager
 ```bash
 sudo systemctl enable ly.service
 sudo systemctl start ly.service
 ```
 
-#### systemd services for notification scripts
+## systemd services for notification scripts
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable batteryNotif5m.timer
@@ -76,7 +94,7 @@ systemctl --user start batteryNotif5m.timer
 systemctl --user start batteryNotif1m.timer
 ```
 
-#### Keys
+### Keys
 > SSH Keys
 ```bash
 ssh-keygen -t ed25519 -C <Email>
@@ -90,14 +108,14 @@ ssh-add ~/.ssh/id_ed25519
 - **Ctrl + `** => Quick phrase. Only appears if the keybinding is pressed while typing.
 - **f7** => When writing in Japanese, turns text into Katakana (カタカナ).
 
-#### KMonad remapping:
+### KMonad remapping:
 
 - **Capslock** => SUPER
 - **Ctrl** => Tab
 - **Tab** => Ctrl
 - **Super / Meta** => Esc
 
-#### Script function keys:
+### Script function keys:
 
 - **f12** => Information key. Date and time, Wifi connection, Battery status.
 - **f9** => Hyprpicker (Colour picker).
@@ -106,7 +124,7 @@ ssh-add ~/.ssh/id_ed25519
 - **PickupPhone** => Decreases mouse sensitivity.
 - **HangupPhone** => Increases mouse sensitivity.
 
-#### Hyprland keybindings:
+### Hyprland keybindings:
 
 - **Super + Q** => launches terminal (kitty)
 - **Super + C** => killactive
@@ -124,7 +142,7 @@ ssh-add ~/.ssh/id_ed25519
 - **Super + S** => toggle "special" workspace
 - **Super + Shift + S** => move focused tile to "special" workspace
 
-#### fctix5
+### fctix5
 
 - **Ctrl + Space** => Toggle Input Method + Enumerate Input Method
 - **Ctrl + Shift + Space** => Enumerate Input Method Backwards
