@@ -95,7 +95,6 @@ qbittorrent
 qimgv
 qt5-wayland
 qt6-wayland
-ranger
 reflector
 retroarch
 retroarch-assets-ozone
@@ -137,6 +136,7 @@ xdg-desktop-portal-hyprland
 xdg-utils
 xorg-server
 yay
+yazi
 yt-dlp
 zen-browser-bin
 zram-generator
