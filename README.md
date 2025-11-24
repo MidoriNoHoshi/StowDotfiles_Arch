@@ -2,18 +2,18 @@ These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before
 
 ### Setup:
 
-| Ingredient            | Flavour        |
-|---------------------|----------------|
-| OS (Operating System)                  | Arch Linux     |
-| WM (Windows Manager)                 | Hyprland       |
-| Terminal            | Kitty          |
-| Launcher            | Fuzzel         |
-| Notification Daemon       | Dunst          |
-| Key Remapping       | KMonad         |
-| Editor              | Neovim         |
-| Internet Browser             | Zen Browser    |
-| File Managers       | Nemo, Ranger   |
-| IME (Input Method Editor)  | fcitx5  |
+| Ingredient                | Flavour      |
+| ------------------------- | ------------ |
+| OS (Operating System)     | Arch Linux   |
+| WM (Windows Manager)      | Hyprland     |
+| Terminal                  | Kitty        |
+| Launcher                  | Fuzzel       |
+| Notification Daemon       | Dunst        |
+| Key Remapping             | KMonad       |
+| Editor                    | Neovim       |
+| Internet Browser          | Zen Browser  |
+| File Managers             | Nemo, Ranger |
+| IME (Input Method Editor) | fcitx5       |
 
 (Custom scripts using dunst replacing a information bar).
 
@@ -41,6 +41,19 @@ Need to be re-installed through fcitx5 configuration tool
 - fcitx5-mozc (Japanese)
 - fcitx5-English (US)
 - fcitx5-Norwegian (bokmål)
+
+#### KMonad (Pain in the ass)
+KMonad config file in `/home/$USER/.config/kmonad` as default.kbd
+
+The input for default.kbd is found in `/dev/input`. There are two directories in here to look at. 
+by-id/ directory is for devices connected externally.
+by-path/ contains symlinks based on the physical path through the system bus (integrated devices).
+Execute: `cat /proc/bus/input/devices` to identify the keyboard symlink.
+Then write the kmonad.service file in `/etc/systemd/system/`. Ensure 'ExecStart' points to both the KMonad executable at `/usr/bin/kmonad` and the default.kbd file (in `/home/$USER/.config/kmonad`).
+Start the service:
+```bash
+sudo systemctl enable --now kmonad.service
+```
 
 #### Installing pacman and yay packages
 ```bash
