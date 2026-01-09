@@ -5,6 +5,7 @@ power=$(cat "$Bat0_Path"/capacity)
 status=$(cat "$Bat0_Path"/status)
 icon="󰁹"
 statusIcon="󰁹"
+Keymap=$(hyprctl devices | awk '/Keyboards:/ {in_kb=1} in_kb && /active keymap:/ {keymap=$0} in_kb && /main: yes/ {sub(/.*active keymap: /,"",keymap); print keymap; exit}')
 
 if ["$power" -ge 100 ]; then
   icon="󰁹" # Full
@@ -62,5 +63,5 @@ fi
 
 # Just realised, this "string:x-dunst-stack-tag" part just assigns the notificatios "tag". In other, here it just prevents dunst from showing how many times this notification was called. Doesn't actually do anything in terms of the content of the notification.
 # dunstify -h string:x-dunst-stack-tag:"$power" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$statusIcon $icon: $power% \n Wifi: $Wifi_state $Wifi_SSID $Wifi_RSSI"
-dunstify -h string:x-dunst-stack-tag:"$power" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$Wifi_Icon-$RSSI_value $Wifi_state: $Wifi_SSID \n $statusIcon $icon: $power%"
+dunstify -h string:x-dunst-stack-tag:"info" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$Wifi_Icon-$RSSI_value $Wifi_state: $Wifi_SSID \n  $Keymap \n $statusIcon $icon $power%"
 exit 0
