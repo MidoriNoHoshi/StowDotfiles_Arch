@@ -1,0 +1,6 @@
+[Unit]
+Description=Wallpaper Manager (battery + time)
+
+[Service]
+Type=oneshot
+ExecStart=%h/dotfiles/Scripts/Linux-Information-Notification-Scripts/wallpaperInfo.sh
