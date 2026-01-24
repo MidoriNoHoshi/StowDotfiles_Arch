@@ -102,9 +102,9 @@ fi
 # If bluetooth is off, it should show in the main notification.
 BT_powered=$(bluetoothctl show | grep "Powered:" | awk '{print $2}')
 if [ "$BT_powered" = "no" ]; then
-  BT_state="\n Off"
+  BT_state="\n  Off"
 else
-  BT_state="\n󰂲 Disconnected"
+  BT_state="\n 󰂲 Disconnected"
   BT_macs=$(bluetoothctl devices | cut -d ' ' -f 2)
   Connected_icon=" " 
   for mac in $BT_macs; do
@@ -149,6 +149,6 @@ fi
 
 # Just realised, this "string:x-dunst-stack-tag" part just assigns the notificatios "tag". In other, here it just prevents dunst from showing how many times this notification was called. Doesn't actually do anything in terms of the content of the notification.
 # dunstify -h string:x-dunst-stack-tag:"$power" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$statusIcon $icon: $power% \n Wifi: $Wifi_state $Wifi_SSID $Wifi_RSSI"
-dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" "$(date +"%H:%M %b %d %a")" "$Wifi_Icon-$RSSI_value $Wifi_state: \n 󰀂 $Wifi_SSID \n $vpn_status \n  $Keymap \n $statusIcon $icon $power%$BT_state"
+dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" " $(date +"%H:%M %b %d %a")" " $Wifi_Icon-$RSSI_value $Wifi_state: \n 󰀂 $Wifi_SSID \n $vpn_status \n  $Keymap \n $statusIcon $icon $power%$BT_state"
 
 exit 0
