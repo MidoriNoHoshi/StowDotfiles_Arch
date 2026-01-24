@@ -2,8 +2,9 @@
 Description=Run wallpaper information script every minute
 
 [Timer]
-OnBootSec=30s
-OnUnitActiveSec=60s
+OnCalendar=*:0/1
+; OnBootSec=30s
+; OnUnitActiveSec=60s
 Unit=wallpaperInfo.service
 Persistent=true
 

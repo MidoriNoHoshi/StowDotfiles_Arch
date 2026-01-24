@@ -6,7 +6,7 @@ volumeFloat=$(echo "$volume" | awk '{print $2}' | sed 's/\[MUTED]//')
 
 volumePercent=$(printf "%.0f" "$(echo "$volumeFloat * 100" | bc)")
 
-audio_source=$(pactl info | grep -oP "Default Sink: alsa_output\.\K.*(?=\.[^.])") # Explaining the Regex bullshit:
+# audio_source=$(pactl info | grep -oP "Default Sink: alsa_output\.\K.*(?=\.[^.])") # Explaining the Regex bullshit:
 # grep -oP. o (print only the part that matches the pattern). P (use Perl Compatible Regular Expressions, basically enable regex)
 # \K (Forget everything up to now, chopping off "Default Sink: alsa_output.")
 # .* (this is the "main match". The "." includes any character expect for a newline. The "*" quantifier means "zero or more occurances." It tries to match the longest possible string given by the constraints of the next terms (the lookahead))
@@ -36,7 +36,9 @@ if echo "$volume" | grep -q '\[MUTED\]'; then
   icon="󰝟 "
 fi
 
-# --- Send the dunstify notification with the progress bar ---
+BT_info=$(bluetoothctl info)
+if [ -z ]
 
+# --- Send the dunstify notification with the progress bar ---
 dunstify -h string:x-dunst-stack-tag:volumePercent -h int:value:"$volumePercent" "$icon Volume: ${volumePercent}%${isMuted}" "$audio_source"
 exit 0

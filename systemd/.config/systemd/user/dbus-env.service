@@ -1,0 +1,9 @@
+[Unit]
+Description=Export Wayland env to DBus
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
+
+[Install]
+WantedBy=default.target
