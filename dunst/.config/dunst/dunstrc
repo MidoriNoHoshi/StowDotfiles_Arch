@@ -3,7 +3,7 @@
     follow = mouse
     width = 0, 200
     height = (0, 200)
-    origin = top-light
+    origin = top-right
     offset = (18, 18)
     scale = 2
     notification_limit = 12
@@ -23,15 +23,15 @@
     horizontal_padding = 12
     text_icon_padding = 12
     frame_width = 1
-    frame_color = "##9cc3c0"
+    frame_color = "#9cc3c0"
     gap_size = 6
     separator_color = frame
     sort = urgency_descending
     font = 0xProto Nerd Font 12
     line_height = 0
     markup = full
-    format = "<b>%s</b>\n%b"
-    word_wrap = yes # Not really sure what this does?
+    format = "<span font='15'><b>%s</b></span>\n%b"
+    word_wrap = yes
     alignment = left
     vertical_alignment = center
     show_age_threshold = -1
@@ -81,6 +81,7 @@ fullscreen = delay
     background = "#222222"
     foreground = "#e4b5cb, #9cc3c0"
     highlight = "#e4b5cb, #83e6aa"
+    format = "<span font='13'><b><i>%s</i></b></span>\n%b"
     timeout = 3
     # default_icon = dialog-information
 
@@ -96,23 +97,23 @@ fullscreen = delay
     background = "#52030b"
     foreground = "#ffffff"
     frame_color = "#ff0000"
-    highlight = "#72ae6, #e4b5cb"
+    highlight = "#c72ae6, #e4b5cb"
     timeout = -1
     # override_pause_level = 60
     # default_icon = dialog-warning
 
-    [discord]
-    appname = Discord
-    background = "#000000"
-    foreground = "#E0E3FF"
-    frame_color = "#99AAB5"
-    timeout = 6
-    icon = ~/Pictures/Logos + svg/Discord/Discord_Symbol_Color/Discord-Symbol-Blurple.png
-    
-    [spotify]
-    appname = Spotify
-    origin = bottom-center
-    frame_color + "#1db954"
-    background = "#212121"
-    foreground = "#1db954"
-    timeout = 1
+[discord]
+appname = Discord
+background = "#000000"
+foreground = "#E0E3FF"
+frame_color = "#99AAB5"
+timeout = 6
+icon = ~/Pictures/Logos + svg/Discord/Discord_Symbol_Color/Discord-Symbol-Blurple.png
+
+[spotify]
+appname = Spotify
+origin = bottom-center
+frame_color = "#1db954"
+background = "#212121"
+foreground = "#1db954"
+timeout = 1

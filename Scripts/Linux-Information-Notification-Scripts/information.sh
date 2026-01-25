@@ -2,6 +2,11 @@
 
 # Keyboard layout information: ------------------------------------------------------------------
 Keymap=$(hyprctl devices | awk '/Keyboards:/ {in_kb=1} in_kb && /active keymap:/ {keymap=$0} in_kb && /main: yes/ {sub(/.*active keymap: /,"",keymap); print keymap; exit}')
+if [ "$Keymap" = "English (US)" ]; then
+  Keymap=""
+else
+  Keymap="\n  $Keymap"
+fi
 
 
 # Battery related information: ------------------------------------------------------------------
@@ -74,26 +79,34 @@ else
   Wifi_Icon="󰤯 "
 fi
 
+Wifi_fullInfo=" $Wifi_Icon-$RSSI_value $Wifi_state: \n 󰀂 $Wifi_SSID"
 
 # VPN related information: ----------------------------------------------------------------------
+# Going to mix with Wifi info a little bit.
 iface=$(wg show interfaces 2>/dev/null)
 vvv="󰖂 VPN:"
 
-if [[ -z "$iface" ]]; then
-  vpn_status="${vvv}󰝷 "
+if [ "$Wifi_state" = "disconnected" ]; then
+  vpn_status=""
+  Wifi_fullInfo=" $Wifi_Icon-$RSSI_value $Wifi_state"
 else
-  case "$iface" in
-    *-NL-*)  vpn_status="${vvv}🇳🇱 NL" ;;
-    *-JP-*)  vpn_status="${vvv}🇯🇵 JP" ;;
-    *-CAN-*) vpn_status="${vvv}🇨🇦 CA" ;;
-    *-NOR-*) vpn_status="${vvv}🇳🇴 NO" ;;
-    *-US-*) vpn_status="${vvv}🇺🇸 US" ;;
-    *-PL-*) vpn_status="${vvv}🇵🇱 PL" ;;
-    *-CH-*) vpn_status="${vvv}🇨🇭 CH" ;;
-    *-MX-*) vpn_status="${vvv}🇲🇽 MX" ;;
-    *-SG-*) vpn_status="${vvv}🇸🇬 SG" ;;
-    *)     vpn_status="${vvv}󰶼 " ;;
-  esac
+  if [[ -z "$iface" ]]; then
+    vpn_status="${vvv}󰝷 "
+  else
+    case "$iface" in
+      *-NL-*)  vpn_status="${vvv}🇳🇱 NL" ;;
+      *-JP-*)  vpn_status="${vvv}🇯🇵 JP" ;;
+      *-CAN-*) vpn_status="${vvv}🇨🇦 CA" ;;
+      *-NOR-*) vpn_status="${vvv}🇳🇴 NO" ;;
+      *-US-*) vpn_status="${vvv}🇺🇸 US" ;;
+      *-PL-*) vpn_status="${vvv}🇵🇱 PL" ;;
+      *-CH-*) vpn_status="${vvv}🇨🇭 CH" ;;
+      *-MX-*) vpn_status="${vvv}🇲🇽 MX" ;;
+      *-SG-*) vpn_status="${vvv}🇸🇬 SG" ;;
+      *)     vpn_status="${vvv}󰶼 " ;;
+    esac
+  fi
+  vpn_status="\n $vpn_status"
 fi
 
 
@@ -149,6 +162,6 @@ fi
 
 # Just realised, this "string:x-dunst-stack-tag" part just assigns the notificatios "tag". In other, here it just prevents dunst from showing how many times this notification was called. Doesn't actually do anything in terms of the content of the notification.
 # dunstify -h string:x-dunst-stack-tag:"$power" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$statusIcon $icon: $power% \n Wifi: $Wifi_state $Wifi_SSID $Wifi_RSSI"
-dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" " $(date +"%H:%M %b %d %a")" " $Wifi_Icon-$RSSI_value $Wifi_state: \n 󰀂 $Wifi_SSID \n $vpn_status \n  $Keymap \n $statusIcon $icon $power%$BT_state"
+dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" " $(date +"%H:%M %b %d %a")" "$Wifi_fullInfo$vpn_status$BT_state$Keymap \n $statusIcon $icon $power%"
 
 exit 0

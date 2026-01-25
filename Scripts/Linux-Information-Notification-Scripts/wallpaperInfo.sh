@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
-set -euo pipefail #Bash Unofficial Strict Mode.
-# -e (errexit). If any command indicates an error, exit.
-# -u (nounset). Unset variables are treated as errors.
-# -o pipefail. Ensures that a pipeline returns a failure if any command in the pipe fails.
 
 Bat0_Path="/sys/class/power_supply/BAT0"
-Status=$(cat "$Bat0_Path"/status)
-BatteryLevel=$(cat "$Bat0_Path"/capacity)
+if [[ -r "$Bat0_Path/status" && -r "$Bat0_Path/capacity" ]]; then
+  Status=$(<"$Bat0_Path/status")
+  BatteryLevel=$(<"$Bat0_Path/capacity")
+else
+  Status="Unknown"
+  BatteryLevel=100
+fi
+
+Latitude="34.6937N"
+Longitude="135.5023E"
+Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude")
+Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude")
+# times in minutes. Nowtime = minutes since midnight (now)
+Nowtime=$((10#$(date +%H)*60 + 10#$(date +%M)))
+Dawntime=$((10#${Dawn%:*}*60 + 10#${Dawn#*:}))
+(( Dawntime < 60 )) && Dawntime=60 # Prevents negative-time.
+Dusktime=$((10#${Dusk%:*}*60 + 10#${Dusk#*:}))
+(( Dusktime > 1439 )) && Dusktime=1439 # Clamp down dusk not later than midnight.
+# This all goes straight out of the window in arctic conditions however.
+
 month=$(date +%m)
 
 Monitor="eDP-1"
@@ -35,10 +49,6 @@ esac
 
 LowBatteryWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust Yourself. Eveything Will Be Okay.png"
 
-hour="$(date +%H)"
-hour="${hour#0}"
-hour="${hour:-0}"
-
 MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Quitting is not an option!.jpg"
 NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust Yourself. Eveything Will Be Okay.png"
 target="$DefaultWallpaper"
@@ -49,16 +59,21 @@ UpdateWallpaper() {
 }
 
 if [[ "$Status" == "Discharging" ]] && (( BatteryLevel -le 20 )); then
- dunstify -h string:x-dunst-stack-tag:power1 -h int:value:"$BatteryLevel" "$(date +"%H:%M")" "$BatteryLevel"
+ dunstify -u critical -h string:x-dunst-stack-tag:power1 -h int:value:"$BatteryLevel" "$(date +"%H:%M")" "$BatteryLevel"
  target="$LowBatteryWallpaper"
 else
-  if (( hour >= 18 || hour < 5 )); then
+  if (( Nowtime < Dawntime || Nowtime >= Dusktime )); then
     target="$NightWallpaper"
-  elif (( hour >= 5 && hour < 11 )); then
+  elif (( Nowtime >= Dawntime - 60 && Nowtime < Dawntime + 120 )); then
     target="$MorningWallpaper"
   else
     target="$DefaultWallpaper"
   fi
 fi
  
+# Keep checking whether Hyprpaper is ready. If not ready, wait 0.2s and try again.
+until hyprctl hyprpaper list >/dev/null 2>&1; do
+  sleep 0.8
+done
+
 UpdateWallpaper "$target"
