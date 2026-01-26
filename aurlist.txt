@@ -9,3 +9,4 @@ ttf-martian-mono
 wireguard-go-git
 yay
 zen-browser-bin
+sunwait

@@ -52,9 +52,13 @@ MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Quitting is 
 NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust Yourself. Eveything Will Be Okay.png"
 target="$DefaultWallpaper"
 
+# Path to store current wallpaper state
+tmpState="/tmp/currentWallpaper"
+
 UpdateWallpaper() {
   local img="$1"
   hyprctl hyprpaper wallpaper "${Monitor},${img},cover" >/dev/null 2>&1 || true
+  echo "$img" > "$tmpState"
 }
 
 if [[ "$Status" == "Discharging" ]] && (( BatteryLevel -le 20 )); then
@@ -69,10 +73,14 @@ else
     target="$DefaultWallpaper"
   fi
 fi
- 
-# Keep checking whether Hyprpaper is ready. If not ready, wait 0.2s and try again.
-# until hyprctl hyprpaper list >/dev/null 2>&1; do
-#   sleep 0.8
-# done
 
-UpdateWallpaper "$target"
+# Reading previous state
+if [[ -f "$tmpState" ]]; then
+  oldTarget=$(<"$tmpState")
+else
+  oldTarget=""
+fi
+
+if [[ "$target" != "$oldTarget" ]]; then
+  UpdateWallpaper "$target"
+fi
