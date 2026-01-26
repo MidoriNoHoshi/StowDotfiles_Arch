@@ -11,8 +11,8 @@ fi
 
 Latitude="34.6937N"
 Longitude="135.5023E"
-Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude")
-Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude")
+Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude" | head -n1)
+Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude" | head -n1)
 # times in minutes. Nowtime = minutes since midnight (now)
 Nowtime=$((10#$(date +%H)*60 + 10#$(date +%M)))
 Dawntime=$((10#${Dawn%:*}*60 + 10#${Dawn#*:}))
@@ -21,27 +21,26 @@ Dusktime=$((10#${Dusk%:*}*60 + 10#${Dusk#*:}))
 (( Dusktime > 1439 )) && Dusktime=1439 # Clamp down dusk not later than midnight.
 # This all goes straight out of the window in arctic conditions however.
 
-month=$(date +%m)
+month=$(date +%-m)
 
 Monitor="eDP-1"
 DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Less_talk..._more_action.webp"
 
 season="Spring" # Set Spring as default, as it is my favourite.
-month=$(date +%m)
 case "$month" in
-  03|04|05)
+  3|4|5)
     season="Spring 春"
     DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Less_talk..._more_action.webp"
     ;;
-  06|07|08)
+  6|7|8)
     season="Summer 夏"
     DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Push yourself...jpg"
     ;;
-  09|10|11)
+  9|10|11)
     season="Autumn 秋"
     DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Believe...jpg"
     ;;
-  12|01|02)
+  12|1|2)
     season="Winter 冬"
     DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Mistakes are proof that you are trying.jpg"
     ;;
@@ -72,8 +71,8 @@ else
 fi
  
 # Keep checking whether Hyprpaper is ready. If not ready, wait 0.2s and try again.
-until hyprctl hyprpaper list >/dev/null 2>&1; do
-  sleep 0.8
-done
+# until hyprctl hyprpaper list >/dev/null 2>&1; do
+#   sleep 0.8
+# done
 
 UpdateWallpaper "$target"
