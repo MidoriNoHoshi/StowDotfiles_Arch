@@ -34,7 +34,7 @@ case "$month" in
     ;;
   6|7|8)
     season="Summer 夏"
-    DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Push yourself...jpg"
+    DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Push_yourself...jpg"
     ;;
   9|10|11)
     season="Autumn 秋"
@@ -42,14 +42,14 @@ case "$month" in
     ;;
   12|1|2)
     season="Winter 冬"
-    DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Mistakes are proof that you are trying.jpg"
+    DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Mistakes_are_proof_that_you_are_trying.jpg"
     ;;
 esac
 
-LowBatteryWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust Yourself. Eveything Will Be Okay.png"
+LowBatteryWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Trust_Yourself._Eveything_Will_Be_Okay.png
 
-MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Quitting is not an option!.jpg"
-NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust Yourself. Eveything Will Be Okay.png"
+MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Quitting_is_not_an_option!.jpg
+NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Trust_Yourself._Eveything_Will_Be_Okay.png
 target="$DefaultWallpaper"
 
 # Path to store current wallpaper state
@@ -57,7 +57,7 @@ tmpState="/tmp/currentWallpaper"
 
 UpdateWallpaper() {
   local img="$1"
-  hyprctl hyprpaper wallpaper "${Monitor},${img},cover" >/dev/null 2>&1 || true
+  hyprctl hyprpaper wallpaper "${Monitor},${img}"
   echo "$img" > "$tmpState"
 }
 
