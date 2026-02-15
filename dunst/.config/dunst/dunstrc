@@ -3,7 +3,7 @@
     follow = mouse
     width = 0, 200
     height = (0, 200)
-    origin = top-left
+    origin = top-center
     offset = (18, 18)
     scale = 2
     notification_limit = 12
@@ -112,7 +112,6 @@ icon = ~/Pictures/Logos + svg/Discord/Discord_Symbol_Color/Discord-Symbol-Blurpl
 
 [spotify]
 appname = Spotify
-origin = bottom-center
 frame_color = "#1db954"
 background = "#212121"
 foreground = "#1db954"

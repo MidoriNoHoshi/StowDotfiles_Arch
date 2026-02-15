@@ -1,0 +1,149 @@
+// ============================================================================
+// EWW Side Panel Styles (Refined)
+// ============================================================================
+
+* {
+  all: unset;
+  font-family: "Outfit", "JetBrainsMono Nerd Font", sans-serif;
+}
+
+$bg-primary: rgba(10, 10, 15, 0.94); // Added slight transparency
+$bg-secondary: #13131a;
+$bg-tertiary: #1a1a24;
+$bg-hover: #21212e;
+$accent-primary: #6366f1;
+$accent-secondary: #8b5cf6;
+$accent-glow: rgba(99, 102, 241, 0.3);
+$text-primary: #e8e9f0;
+$text-secondary: #9ca3af;
+$text-muted: #6b7280;
+$border: rgba(255, 255, 255, 0.08);
+$shadow: rgba(0, 0, 0, 0.5);
+$success: #10b981;
+$warning: #f59e0b;
+$danger: #ef4444;
+$transition: all 0.2s cubic-bezier(0.4, 0.0, 0.2, 1);
+
+.side-panel {
+  background: $bg-primary;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid $border;
+  box-shadow: 0 20px 60px $shadow;
+  margin: 10px;
+}
+
+.panel-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid $border;
+}
+
+.time {
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -1px;
+  color: $accent-primary; // Fallback
+  // background: linear-gradient(135deg, $accent-primary, $accent-secondary);
+  // -webkit-background-clip: text;
+  // background-clip: text;
+}
+
+.user-avatar {
+  min-width: 48px;
+  min-height: 48px;
+  border-radius: 50px;
+  background: linear-gradient(135deg, $accent-primary, $accent-secondary);
+  color: white;
+  label { padding: 12px; font-weight: bold; }
+}
+
+.workspaces {
+  background: $bg-secondary;
+  border-radius: 16px;
+  padding: 8px;
+  border: 1px solid $border;
+}
+
+.workspace-btn {
+  padding: 6px 14px;
+  border-radius: 10px;
+  color: $text-secondary;
+  transition: $transition;
+  &.active {
+    background: $accent-primary;
+    color: white;
+    box-shadow: 0 4px 12px $accent-glow;
+  }
+  &:hover:not(.active) { background: $bg-hover; }
+}
+
+.action-btn {
+  background: $bg-secondary;
+  border: 1px solid $border;
+  border-radius: 16px;
+  padding: 16px;
+  transition: $transition;
+  &:hover {
+    background: $bg-hover;
+    transform: translateY(-2px);
+  }
+  &.active { border-color: $accent-primary; .action-icon { color: $accent-primary; } }
+}
+
+.section {
+  background: $bg-secondary;
+  border-radius: 20px;
+  padding: 18px;
+  border: 1px solid $border;
+}
+
+.section-title {
+  font-size: 10px;
+  letter-spacing: 1.2px;
+  color: $text-muted;
+  margin-bottom: 12px;
+}
+
+// Fixed Slider Styling
+scale {
+  trough {
+    background: $bg-tertiary;
+    min-height: 10px;
+    border-radius: 100px;
+    highlight {
+      background: linear-gradient(90deg, $accent-primary, $accent-secondary);
+      border-radius: 100px;
+    }
+  }
+  slider {
+    background: $text-primary;
+    min-height: 14px;
+    min-width: 14px;
+    border-radius: 100px;
+  }
+}
+
+.music-player {
+  background: $bg-tertiary;
+  .album-art {
+    background: linear-gradient(45deg, $bg-secondary, $accent-primary);
+    border-radius: 12px;
+    min-height: 160px;
+  }
+}
+
+.status-item {
+  padding: 12px;
+  background: rgba($bg-tertiary, 0.5);
+  border-radius: 12px;
+  margin-bottom: 4px;
+  &:hover { background: $bg-hover; }
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 11px;
+  &.success { background: rgba($success, 0.1); color: $success; }
+  &.warning { background: rgba($warning, 0.1); color: $warning; }
+}

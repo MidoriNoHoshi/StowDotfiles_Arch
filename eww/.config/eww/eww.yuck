@@ -1,0 +1,157 @@
+;; ============================================================================
+;; EWW Side Panel Configuration (Optimized)
+;; ============================================================================
+
+;; ----------------------------------------------------------------------------
+;; VARIABLES & POLLS
+;; ----------------------------------------------------------------------------
+
+(defpoll time :interval "1s" "date +'%H:%M'")
+(defpoll date :interval "60s" "date +'%a, %b %d'")
+
+;; Workspaces - Increased interval for active_ws to reduce stutter
+(deflisten workspaces :initial "[]" "./scripts/workspaces.sh")
+(defpoll active_ws :interval "0.5s" "hyprctl monitors -j | jq '.[0].activeWorkspace.id'")
+
+;; Music Player
+(defpoll music_title :interval "2s" "playerctl metadata --format '{{title}}' 2>/dev/null || echo 'Nothing Playing'")
+(defpoll music_artist :interval "2s" "playerctl metadata --format '{{artist}}' 2>/dev/null || echo 'Unknown Artist'")
+(defpoll music_status :interval "1s" "playerctl status 2>/dev/null || echo 'Stopped'")
+
+;; System Controls - 1s is plenty for smooth-feeling sliders
+(defpoll vol :interval "1s" "wpctl get-volume @DEFAULT_AUDIO_SINK@ | awk '{print int($2*100)}'")
+(defpoll brightness :interval "1s" "brightnessctl g | awk '{print int($1/255*100)}'")
+
+;; Network
+(defpoll wifi_status :interval "5s" "nmcli radio wifi")
+(defpoll wifi_ssid :interval "10s" "nmcli -t -f active,ssid dev wifi | grep '^yes' | cut -d':' -f2 || echo 'Disconnected'")
+(defpoll wifi_strength :interval "10s" "nmcli -f IN-USE,SIGNAL dev wifi | grep '*' | awk '{print $2}' || echo '0'")
+
+;; Bluetooth
+(defpoll bt_status :interval "5s" "bluetoothctl show | grep 'Powered: yes' >/dev/null && echo 'on' || echo 'off'")
+
+;; VPN & Battery
+(defpoll vpn_status :interval "5s" "wg show interfaces 2>/dev/null | wc -l")
+(defpoll vpn_country :interval "10s" "./scripts/get_vpn_country.sh")
+(defpoll battery :interval "15s" "cat /sys/class/power_supply/BAT0/capacity 2>/dev/null || echo '100'")
+(defpoll bat_status :interval "15s" "cat /sys/class/power_supply/BAT0/status 2>/dev/null || echo 'Unknown'")
+
+;; ----------------------------------------------------------------------------
+;; WIDGETS
+;; ----------------------------------------------------------------------------
+
+(defwidget panel-header []
+  (box :class "panel-header" :orientation "h" :space-evenly false
+    (box :class "time-date" :orientation "v" :spacing 2
+      (label :class "time" :text time)
+      (label :class "date" :text date))
+    (box :class "user-avatar" :halign "end" :hexpand true
+      (label :text "U"))))
+
+(defwidget workspaces-widget []
+  (box :class "workspaces" :orientation "h" :spacing 8 :halign "center"
+    (for ws in workspaces
+      (button :class "workspace-btn ${active_ws == ws.id ? 'active' : ''}"
+              :onclick "hyprctl dispatch workspace ${ws.id}"
+              "${ws.id}"))))
+
+(defwidget quick-actions []
+  (box :class "quick-actions" :orientation "h" :spacing 10
+    (button :class "action-btn ${wifi_status == 'enabled' ? 'active' : ''}"
+            :onclick "nmcli radio wifi ${wifi_status == 'enabled' ? 'off' : 'on'}"
+      (box :orientation "v" :spacing 6
+        (label :class "action-icon" :text "${wifi_status == 'enabled' ? '󰖩' : '󰖪'}")
+        (label :class "action-label" :text "WiFi")))
+    
+    (button :class "action-btn ${bt_status == 'on' ? 'active' : ''}"
+            :onclick "bluetoothctl power ${bt_status == 'on' ? 'off' : 'on'}"
+      (box :orientation "v" :spacing 6
+        (label :class "action-icon" :text "${bt_status == 'on' ? '󰂯' : '󰂲'}")
+        (label :class "action-label" :text "BT")))
+    
+    (button :class "action-btn" :onclick "hyprpicker -a"
+      (box :orientation "v" :spacing 6
+        (label :class "action-icon" :text "󰈋")
+        (label :class "action-label" :text "Picker")))
+    
+    (button :class "action-btn" :onclick "wlogout &"
+      (box :orientation "v" :spacing 6
+        (label :class "action-icon" :text "󰐥")
+        (label :class "action-label" :text "Power")))))
+
+(defwidget slider [label icon value onchange]
+  (box :class "slider-item" :orientation "v" :spacing 8
+    (box :class "slider-header" :orientation "h"
+      (box :class "slider-label-group" :orientation "h" :spacing 8 :space-evenly false
+        (label :class "slider-icon" :text icon)
+        (label :class "slider-label" :text label))
+      (label :class "slider-value" :text "${value}%" :halign "end" :hexpand true))
+    (scale :class "slider-track"
+           :value value
+           :min 0
+           :max 101
+           :onchange onchange)))
+
+(defwidget controls-section []
+  (box :class "section" :orientation "v" :spacing 16
+    (label :class "section-title" :text "CONTROLS" :halign "start")
+    (box :class "slider-group" :orientation "v" :spacing 16
+      (slider :label "Volume" :icon "󰕾" :value vol :onchange "wpctl set-volume @DEFAULT_AUDIO_SINK@ {}%")
+      (slider :label "Brightness" :icon "󰃠" :value brightness :onchange "brightnessctl s {}%"))))
+
+(defwidget music-player []
+  (box :class "section music-player" :orientation "v" :spacing 16
+    (label :class "section-title" :text "NOW PLAYING" :halign "start")
+    (box :class "music-content" :orientation "v" :spacing 12
+      (box :class "album-art" (label :text "🎵"))
+      (box :class "music-info" :orientation "v" :spacing 4
+        (label :class "music-title" :text music_title :limit-width 25)
+        (label :class "music-artist" :text music_artist :limit-width 25))
+      (box :class "music-controls" :orientation "h" :spacing 24 :halign "center"
+        (button :class "music-btn" :onclick "playerctl previous" "󰒮")
+        (button :class "music-btn play" 
+                :onclick "playerctl play-pause"
+                "${music_status == 'Playing' ? '󰏤' : '󰐊'}")
+        (button :class "music-btn" :onclick "playerctl next" "󰒭")))))
+
+(defwidget system-status []
+  (box :class "section" :orientation "v" :spacing 10
+    (label :class "section-title" :text "SYSTEM STATUS" :halign "start")
+    (box :class "status-grid" :orientation "v" :spacing 10
+      (box :class "status-item" :orientation "h"
+        (box :class "status-left" :orientation "h" :spacing 10 :space-evenly false
+          (label :class "status-icon" :text "󰖩")
+          (label :class "status-label" :text wifi_ssid))
+        (label :class "status-badge ${wifi_status == 'enabled' ? 'success' : 'warning'}"
+               :text "${wifi_status == 'enabled' ? 'Connected' : 'Offline'}"
+               :halign "end" :hexpand true))
+      (box :class "status-item" :orientation "h" :visible "${vpn_status != '0'}"
+        (box :class "status-left" :orientation "h" :spacing 10 :space-evenly false
+          (label :class "status-icon" :text "󰖂")
+          (label :class "status-label" :text "VPN"))
+        (label :class "status-value" :text vpn_country :halign "end" :hexpand true))
+      (box :class "status-item" :orientation "h"
+        (box :class "status-left" :orientation "h" :spacing 10 :space-evenly false
+          (label :class "status-icon" :text "󰁹")
+          (label :class "status-label" :text "Battery"))
+        (label :class "status-badge ${battery > 20 ? 'success' : 'warning'}"
+               :text "${battery}%"
+               :halign "end" :hexpand true)))))
+
+(defwidget panel-content []
+  (scroll :vscroll true :hscroll false :height 850
+    (box :class "side-panel" :orientation "v" :spacing 20
+      (panel-header)
+      (workspaces-widget)
+      (quick-actions)
+      (controls-section)
+      (music-player)
+      (system-status))))
+
+(defwindow sidepanel
+  :monitor 0
+  :geometry (geometry :x "12px" :y "12px" :width "360px" :height "97%" :anchor "top right")
+  :stacking "overlay"
+  :exclusive false
+  :focusable false
+  (panel-content))
