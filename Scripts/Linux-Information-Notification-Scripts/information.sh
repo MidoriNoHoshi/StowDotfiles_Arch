@@ -107,7 +107,10 @@ else
       *)     vpn_status="${vvv}󰶼 " ;;
     esac
   fi
-  vpn_status="\n $vpn_status"
+    if [ -n "$vpn_status" ]; then
+      vpn_status="\n $vpn_status"
+    fi
+  # vpn_status="\n $vpn_status"
 fi
 
 
@@ -126,8 +129,7 @@ else
   connected_devs=$(bluetoothctl << EOF
 devices Connected
 exit
-EOF
-)
+EOF)
 
   # BT_Display_Names=$(echo "$connected_devs" | grep "Device " | cut -d ' ' -f 3- | paste -sd "," -)
   BT_macs=$(echo "$connected_devs" | grep "Device " | cut -d ' ' -f 2)
@@ -179,9 +181,8 @@ EOF
   fi 
 fi
 
-
 # Just realised, this "string:x-dunst-stack-tag" part just assigns the notificatios "tag". In other, here it just prevents dunst from showing how many times this notification was called. Doesn't actually do anything in terms of the content of the notification.
 # dunstify -h string:x-dunst-stack-tag:"$power" -h int:value:"$power" "$(date +"%b %d %a %H:%M")" "$statusIcon $icon: $power% \n Wifi: $Wifi_state $Wifi_SSID $Wifi_RSSI"
-dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" " $(date +"%H:%M %b %d %a")" "$Wifi_fullInfo$vpn_status$BT_state$Keymap \n $statusIcon $icon $power%"
+dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" " $(date +"%H:%M %b %d %a")" "$Wifi_fullInfo$vpn_status$BT_state$Keymap \n\n $statusIcon $icon $power%"
 
 exit 0

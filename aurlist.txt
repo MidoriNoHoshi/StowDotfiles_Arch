@@ -1,3 +1,4 @@
+android-studio
 ani-cli
 arduino-ide-bin
 aylurs-gtk-shell-git
@@ -5,7 +6,9 @@ bibata-cursor-theme-bin
 emote
 eww
 gallery-dl-bin
+hakuneko-desktop-bin
 markdown-oxide-git
+mecab-ipadic
 nemo-preview
 onlyoffice-bin
 python312

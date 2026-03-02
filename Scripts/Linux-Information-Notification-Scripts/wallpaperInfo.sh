@@ -26,7 +26,8 @@ Longitude="135.5023E"
 Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude" | head -n1)
 Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude" | head -n1)
 # times in minutes. Nowtime = minutes since midnight (now)
-Nowtime=$((10#$(date +%H)*60 + 10#$(date +%M)))
+# Nowtime=$((10#$(date +%H)*60 + 10#$(date +%M)))
+Nowtime=$(( $(date +%H)*60 + $(date +%-M)))
 Dawntime=$((10#${Dawn%:*}*60 + 10#${Dawn#*:}))
 (( Dawntime < 60 )) && Dawntime=60 # Prevents negative-time.
 Dusktime=$((10#${Dusk%:*}*60 + 10#${Dusk#*:}))
@@ -73,7 +74,7 @@ MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Quitting_is_
 NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust_Yourself._Eveything_Will_Be_Okay.png"
 target="$DefaultWallpaper"
 
-if [[ "$Status" == "Discharging" ]] && (( BatteryLevel -le 20 )); then
+if [[ "$Status" == "Discharging" ]] && (( BatteryLevel <= 20 )); then
  dunstify -u critical -h string:x-dunst-stack-tag:power1 -h int:value:"$BatteryLevel" "$(date +"%H:%M")" "$BatteryLevel"
  target="$LowBatteryWallpaper"
 else

@@ -1,12 +1,17 @@
 7zip
 adobe-source-han-sans-jp-fonts
 adobe-source-han-serif-jp-fonts
+android-studio
 android-udev
+ani-cli
 anki
+arduino-ide-bin
+aylurs-gtk-shell-git
 baobab
 base
 base-devel
 bc
+bibata-cursor-theme-bin
 bitwarden
 blueman
 bluez
@@ -20,8 +25,10 @@ deno
 discord
 dunst
 efibootmgr
+emote
 esptool
 evtest
+eww
 exfatprogs
 fcitx5
 fcitx5-configtool
@@ -34,6 +41,7 @@ firefox
 freecad
 fuzzel
 fzf
+gallery-dl-bin
 gimp
 git
 grim
@@ -41,6 +49,7 @@ grub
 gst-libav
 gst-plugin-pipewire
 gvfs-mtp
+hakuneko-desktop-bin
 htop
 hyprland
 hyprpaper
@@ -51,6 +60,7 @@ intel-ucode
 iwd
 kitty
 kmonad
+kooha
 krita
 lazygit
 libcamera
@@ -60,6 +70,8 @@ libva-intel-driver
 linux
 linux-firmware
 luarocks
+markdown-oxide-git
+mecab-ipadic
 mpv
 mtpfs
 mupdf
@@ -70,6 +82,7 @@ nemo-emblems
 nemo-fileroller
 nemo-image-converter
 nemo-pastebin
+nemo-preview
 neovim
 network-manager-applet
 networkmanager
@@ -79,6 +92,7 @@ noto-fonts-emoji
 npm
 ntfs-3g
 obsidian
+onlyoffice-bin
 openssh
 otf-firamono-nerd
 otf-ipaexfont
@@ -94,7 +108,9 @@ prismlauncher
 python-pandas
 python-pip
 python-pipx
+python312
 qbittorrent
+qimgv
 qt5-wayland
 qt6-wayland
 reflector
@@ -107,8 +123,8 @@ slurp
 smartmontools
 socat
 sof-firmware
-steam
 stow
+sunwait
 swaync
 systemd-resolvconf
 tk
@@ -124,6 +140,7 @@ ttf-firacode-nerd
 ttf-hack-nerd
 ttf-hanazono
 ttf-jetbrains-mono-nerd
+ttf-martian-mono
 ttf-mononoki-nerd
 ttf-nerd-fonts-symbols
 ttf-nerd-fonts-symbols-mono
@@ -136,6 +153,7 @@ webp-pixbuf-loader
 wev
 wf-recorder
 wget
+wireguard-go-git
 wireguard-tools
 wireless_tools
 wireplumber
@@ -143,12 +161,14 @@ wireshark-cli
 wireshark-qt
 wl-clipboard
 wpa_supplicant
-xdg-desktop-portal-gtk
 xdg-desktop-portal-hyprland
 xdg-utils
 xorg-server
 xorg-xinit
+yay
+yay-debug
 yazi
 yt-dlp
+zen-browser-bin
 zram-generator
 zsh

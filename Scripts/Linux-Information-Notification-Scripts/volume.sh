@@ -21,11 +21,14 @@ if echo "$volume" | grep -q '\[MUTED\]'; then
 fi
 
 
-bluetoothctl=$(bluetoothctl info)
+bluetoothInfo=$(bluetoothctl << EOF
+info
+exit
+EOF)
 
-if echo "$bluetoothctl" | grep -q "Connected: yes" && echo "$bluetoothctl" | grep -qE "Audio Sink|Headset|Handsfree"; then
+if echo "$bluetoothInfo" | grep -q "Connected: yes" && echo "$bluetoothInfo" | grep -qE "Audio Sink|Headset|Handsfree"; then
     # It's a connected audio device! Get the name.
-    audio_source=" $(echo "$bluetoothctl" | grep "Name:" | sed 's/.*Name: //')"
+    audio_source=" $(echo "$bluetoothInfo" | grep "Name:" | sed 's/.*Name: //')"
 else
     # Not a BT audio device, fall back to the system sink name
     audio_source="󱤓 $(pactl info | grep -oP "Default Sink: alsa_output\.\K.*(?=\.[^.])" | sed 's/[_-]/ /g' | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2)} 1')"
