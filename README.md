@@ -1,5 +1,14 @@
 These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before trying to learn AGS (Aylur's GTK Shell), I wanted to move everything onto Github before I fuck everything up.
 
+<video src="https://github.com/user-attachments/assets/6d1f3431-38b6-44ac-bc51-4d2dc373f0b1" controls width="100%">
+  Your browser does not support the video tag.
+</video>
+
+<video src="https://github.com/user-attachments/assets/d2d52fe4-ed23-41b7-b2e5-4e1aa7933773" controls width="100%">
+  Your browser does not support the video tag.
+</video>
+
+
 # Setup:
 
 | Ingredient                | Flavour      |
