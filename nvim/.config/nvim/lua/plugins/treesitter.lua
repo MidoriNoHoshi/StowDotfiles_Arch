@@ -14,5 +14,8 @@ return {
       "astro",
       -- add more arguments for adding more treesitter parsers
     },
+    indent = {
+      enable = false,
+    },
   },
 }

@@ -120,6 +120,6 @@ if ([[ ! -f "$sessionFlag" ]] && (( uptime_s < 300 ))) || [ "$target" != "$activ
     Notify 0 9000 "rgb(ff0000)" 35 "Low Battery: $BatteryLevel% remaining"
   else
     # hyprctl notify 1 3000 "rgb(ff0000)" "fontsize:24 Entering photopic phase"
-    Notify 1 5000 "rgb(ffffff)" 24 "Commencing diurnal cycle"
+    Notify 1 5000 "rgb(ffffff)" 24 "Daytime"
   fi
 fi

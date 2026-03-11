@@ -30,6 +30,7 @@ esptool
 evtest
 eww
 exfatprogs
+fastfetch
 fcitx5
 fcitx5-configtool
 fcitx5-gtk
@@ -87,6 +88,7 @@ neovim
 network-manager-applet
 networkmanager
 nodejs
+nodejs-live-server
 noto-fonts-cjk
 noto-fonts-emoji
 npm
@@ -116,6 +118,8 @@ qt6-wayland
 reflector
 retroarch
 retroarch-assets-ozone
+rmlint
+rmlint-debug
 rust
 sassc
 seahorse

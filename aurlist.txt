@@ -10,9 +10,12 @@ hakuneko-desktop-bin
 markdown-oxide-git
 mecab-ipadic
 nemo-preview
+nodejs-live-server
 onlyoffice-bin
 python312
 qimgv
+rmlint
+rmlint-debug
 sunwait
 ttf-martian-mono
 wireguard-go-git
