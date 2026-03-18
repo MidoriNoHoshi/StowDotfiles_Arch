@@ -15,7 +15,6 @@ onlyoffice-bin
 python312
 qimgv
 rmlint
-rmlint-debug
 sunwait
 ttf-martian-mono
 wireguard-go-git

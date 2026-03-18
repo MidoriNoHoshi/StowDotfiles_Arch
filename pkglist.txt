@@ -24,6 +24,7 @@ cool-retro-term
 deno
 discord
 dunst
+earlyoom
 efibootmgr
 emote
 esptool
@@ -119,7 +120,6 @@ reflector
 retroarch
 retroarch-assets-ozone
 rmlint
-rmlint-debug
 rust
 sassc
 seahorse
