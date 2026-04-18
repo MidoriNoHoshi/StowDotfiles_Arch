@@ -16,5 +16,8 @@ elif [ "$percent" -ge 0 ]; then
   icon=" "
 fi
 
-dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$percent" "$icon Brightness: ${percent}%"
+# dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$percent" "$icon Brightness: ${percent}%"
+# 明るさ
+dunstify -h string:x-dunst-stack-tag:brightness -h int:value:"$percent" "$icon 輝度: ${percent}%"
+
 exit 0

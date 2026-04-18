@@ -16,6 +16,8 @@ python312
 qimgv
 rmlint
 sunwait
+tikzit
+tikzit-debug
 ttf-martian-mono
 wireguard-go-git
 yay

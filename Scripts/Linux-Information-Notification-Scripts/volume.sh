@@ -16,7 +16,8 @@ elif [ "$volumePercent" -ge 20 ]; then
 fi
 
 if echo "$volume" | grep -q '\[MUTED\]'; then
-  isMuted=" (Muted)"
+  # isMuted=" (Muted)"
+  isMuted=" (ミュート)"
   icon="󰝟 "
 fi
 
@@ -35,7 +36,7 @@ else
 fi
 
 # --- Send the dunstify notification with the progress bar ---
-dunstify -h string:x-dunst-stack-tag:volumePercent -h int:value:"$volumePercent" "$icon Volume: ${volumePercent}%${isMuted}" "$audio_source"
+dunstify -h string:x-dunst-stack-tag:volumePercent -h int:value:"$volumePercent" "$icon 音量: ${volumePercent}%${isMuted}" "$audio_source"
 exit 0
 
 # Explaining the Regex bullshit:
