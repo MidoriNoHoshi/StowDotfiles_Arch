@@ -7,6 +7,9 @@ emote
 eww
 gallery-dl-bin
 hakuneko-desktop-bin
+lib32-gst-plugins-base
+lib32-gst-plugins-good
+lib32-gstreamer
 markdown-oxide-git
 mecab-ipadic
 nemo-preview
@@ -17,9 +20,10 @@ qimgv
 rmlint
 sunwait
 tikzit
-tikzit-debug
+ttf-hanazono
 ttf-martian-mono
 wireguard-go-git
 yay
 yay-debug
+yt-dlp-nightly-bin
 zen-browser-bin

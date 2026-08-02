@@ -1,0 +1,436 @@
+#!/usr/bin/env bash
+
+# ── Configuration ────────────────────────────────────────────────────────────────
+TRIGGER_FILE="/tmp/info_script_triggers"
+MONITOR_PID_FILE="/tmp/info_ip_monitor.pid"
+MONITOR_ACTIVE_FILE="/tmp/info_ip_monitor.active"
+NO_IP_REMIND_FILE="/tmp/info_no_ip_last_remind"
+INTERNET_STATE_FILE="/tmp/info_internet_state"
+IP_STATE_FILE="/tmp/info_ip_state"
+BT_STATE_FILE="/tmp/info_bt_state"
+# Holds "<ssid>:<epoch>" of the last captive-portal login attempt, so a flapping
+# connection can't re-launch Playwright over and over — see CAPTIVE_RETRY_COOLDOWN.
+CAPTIVE_ATTEMPTED_FILE="/tmp/info_captive_attempted"
+CAPTIVE_LOCKFILE="/tmp/captiveLogin.lock"
+
+TRIGGER_WINDOW=8
+NO_IP_REMIND_INTERVAL=30
+MONITOR_INTERVAL=2   # poll cadence for the background monitor loop
+
+# Hysteresis: require this many *consecutive* contrary readings before we
+# flip a stored state / fire a notification. This is what actually stops the
+# notification spam — a single flaky ping no longer counts as an outage.
+IP_DOWN_CONFIRM=2
+NET_DOWN_CONFIRM=2
+NET_UP_CONFIRM=2
+
+# Minimum seconds between two captive-login (Playwright) attempts for the same
+# SSID, regardless of how the internet-state flaps in between. This is what
+# stops repeated 25s Page.goto timeouts from stacking up on a flaky network.
+CAPTIVE_RETRY_COOLDOWN=60
+
+PYTHON_VENV="$HOME/.local/share/venvs/playwright/bin/python"
+CAPTIVE_SCRIPT="$HOME/.local/bin/captiveLogin.py"
+CAPTIVE_SSID_PATTERN="Doutor|DOUTOR|Wi2|0000docomo|7Connect|SoftBank|公衆無線LAN"
+
+# NOTE (future work): this is still a poll loop. iwd exposes connection/station
+# state changes over D-Bus (net.connman.iwd), which `busctl monitor` or a small
+# dbus python listener could subscribe to directly. That would let the monitor
+# react instantly to association/disassociation events instead of sleeping in
+# a fixed interval, and would remove the need to re-run `iwctl station show`
+# at all. Left as a future rewrite — not done here to keep this change focused.
+
+# ── Fast In-Memory / Sysfs Helpers ───────────────────────────────────────────────
+get_ip() {
+  read -r _ ip _ < <(ip -4 addr show wlan0 2>/dev/null | grep 'inet ')
+  echo "${ip%%/*}"
+}
+
+connectivity_ok() {
+    local code
+    code=$(
+        curl \
+            --silent \
+            --output /dev/null \
+            --write-out "%{http_code}" \
+            --connect-timeout 1 \
+            --max-time 2 \
+            http://connectivitycheck.gstatic.com/generate_204
+    )
+
+    [[ "$code" == "204" ]]
+}
+
+get_rssi() {
+  # Direct kernel read for wlan0 RSSI in dBm — already cheap, no caching needed.
+  local rssi
+  rssi=$(awk '/wlan0:/ {print int($4)}' /proc/net/wireless 2>/dev/null)
+  echo "${rssi#-}"
+}
+
+# `iwctl station wlan0 show` is the one genuinely expensive lookup here (spawns
+# iwctl, talks to iwd over D-Bus). Every caller that needs the SSID and/or link
+# state should call this once and reuse CUR_SSID / CUR_WIFI_STATE, rather than
+# invoking iwctl repeatedly per loop iteration.
+_refresh_iwctl_cache() {
+  local raw
+  raw=$(iwctl station wlan0 show 2>/dev/null)
+  CUR_SSID=$(sed -n 's/.*Connected network[[:space:]]*//p' <<<"$raw" | xargs)
+  if [[ "$raw" =~ State[[:space:]]+([a-zA-Z]+) ]]; then
+    CUR_WIFI_STATE="${BASH_REMATCH[1]}"
+  else
+    CUR_WIFI_STATE="disconnected"
+  fi
+}
+
+_is_monitor_alive() {
+  [ -f "$MONITOR_ACTIVE_FILE" ] || return 1
+  local pid
+  read -r pid < "$MONITOR_PID_FILE" 2>/dev/null
+  [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null
+}
+
+# ── Captive-Portal Login (isolated concern) ──────────────────────────────────────
+# This has nothing to do with generic connectivity monitoring — it only exists
+# to auto-click through cafe/carrier login pages. Kept as its own function so
+# the monitor loop's job stays "detect + notify", and this stays "act".
+_maybe_run_captive_login() {
+  local ssid="$1"
+  local now_ts="$2"
+
+  [[ -z "$ssid" ]] && return
+  [[ "$ssid" =~ $CAPTIVE_SSID_PATTERN ]] || return
+  [[ -x "$PYTHON_VENV" && -f "$CAPTIVE_SCRIPT" ]] || return
+
+  local record attempted_ssid attempted_ts
+  read -r record < "$CAPTIVE_ATTEMPTED_FILE" 2>/dev/null
+  attempted_ssid="${record%%:*}"
+  attempted_ts="${record##*:}"
+  [[ "$attempted_ts" =~ ^[0-9]+$ ]] || attempted_ts=0
+
+  # Same SSID and still within cooldown → skip. A different SSID always
+  # bypasses the cooldown (new network deserves an immediate try). This is
+  # also what prevents a flapping connection from re-launching Playwright
+  # every few seconds: recovery no longer clears this, only time does.
+  if [[ "$attempted_ssid" == "$ssid" && $(( now_ts - attempted_ts )) -lt $CAPTIVE_RETRY_COOLDOWN ]]; then
+    return
+  fi
+
+  echo "$ssid:$now_ts" > "$CAPTIVE_ATTEMPTED_FILE"
+
+  if flock -n 9; then
+    "$PYTHON_VENV" "$CAPTIVE_SCRIPT"
+  fi 9>"$CAPTIVE_LOCKFILE" &
+}
+
+# ── Background Monitor ────────────────────────────────────────────────────────────
+_start_monitor() {
+    touch "$MONITOR_ACTIVE_FILE"
+    echo "$BASHPID" > "$MONITOR_PID_FILE"
+
+    local current_ip ssid now_ts
+    local old_ip_state old_internet_state
+    local ip_fail_streak=0 net_fail_streak=0 net_ok_streak=0
+
+    # Seed state so the first loop iteration doesn't misfire a transition.
+    if [[ -n "$(get_ip)" ]]; then
+        echo up > "$IP_STATE_FILE"
+    else
+        echo down > "$IP_STATE_FILE"
+    fi
+
+    while true; do
+        sleep "$MONITOR_INTERVAL"
+
+        _refresh_iwctl_cache        # one iwctl call per iteration, reused below
+        ssid="$CUR_SSID"
+        current_ip=$(get_ip)
+        now_ts=$(date +%s)
+
+        # ── IP layer: require IP_DOWN_CONFIRM consecutive misses ──
+        if [[ -z "$current_ip" ]]; then
+            ip_fail_streak=$((ip_fail_streak + 1))
+
+            if (( ip_fail_streak >= IP_DOWN_CONFIRM )); then
+                old_ip_state=$(cat "$IP_STATE_FILE" 2>/dev/null)
+                if [[ "$old_ip_state" != "down" ]]; then
+                    echo down > "$IP_STATE_FILE"
+                    echo down > "$INTERNET_STATE_FILE"
+                    dunstify \
+                        -u critical \
+                        -h string:x-dunst-stack-tag:"ip-monitor" \
+                        "󰤭 IP 消失" \
+                        "wlan0 の IPv4 アドレスが失われました"
+                fi
+            fi
+            continue
+        fi
+
+        ip_fail_streak=0
+        old_ip_state=$(cat "$IP_STATE_FILE" 2>/dev/null)
+        [[ "$old_ip_state" != "up" ]] && echo up > "$IP_STATE_FILE"
+
+        # ── Internet layer: require NET_*_CONFIRM consecutive readings ──
+        if connectivity_ok; then
+            net_ok_streak=$((net_ok_streak + 1))
+            net_fail_streak=0
+        else
+            net_fail_streak=$((net_fail_streak + 1))
+            net_ok_streak=0
+        fi
+
+        old_internet_state=$(cat "$INTERNET_STATE_FILE" 2>/dev/null)
+
+        if [[ "$old_internet_state" != "up" && $net_ok_streak -ge $NET_UP_CONFIRM ]]; then
+            echo up > "$INTERNET_STATE_FILE"
+            dunstify \
+                -u low \
+                -h string:x-dunst-stack-tag:"ip-monitor" \
+                "󰤨 インターネット復旧" \
+                "$ssid"
+        elif [[ "$old_internet_state" != "down" && $net_fail_streak -ge $NET_DOWN_CONFIRM ]]; then
+            echo down > "$INTERNET_STATE_FILE"
+            dunstify \
+                -u critical \
+                -h string:x-dunst-stack-tag:"ip-monitor" \
+                "󰤭 インターネット接続なし" \
+                "$ssid"
+        fi
+
+        # Only try the captive login once the outage is *confirmed* down —
+        # cooldown inside the function further caps retries on a flaky link.
+        if [[ "$(cat "$INTERNET_STATE_FILE" 2>/dev/null)" == "down" ]]; then
+            _maybe_run_captive_login "$ssid" "$now_ts"
+        fi
+    done
+}
+
+_kill_monitor() {
+  rm -f "$MONITOR_ACTIVE_FILE"
+  local old_pid
+  read -r old_pid < "$MONITOR_PID_FILE" 2>/dev/null
+  [ -n "$old_pid" ] && kill "$old_pid" 2>/dev/null
+  rm -f "$MONITOR_PID_FILE" "$NO_IP_REMIND_FILE" "$IP_STATE_FILE" "$CAPTIVE_ATTEMPTED_FILE"
+}
+
+# ── State Capture (single cached iwctl call for the whole script run) ───────────
+_refresh_iwctl_cache
+current_ip=$(get_ip)
+Wifi_SSID="$CUR_SSID"
+wifi_state="$CUR_WIFI_STATE"
+
+# ── Parse Rapid Press Sequence ───────────────────────────────────────────────────
+now=$(date +%s)
+mapfile -t timestamps < <(
+  [ -f "$TRIGGER_FILE" ] && cat "$TRIGGER_FILE"
+  echo "$now"
+)
+filtered=()
+for ts in "${timestamps[@]}"; do
+  (( now - ts <= TRIGGER_WINDOW )) && filtered+=("$ts")
+done
+printf '%s\n' "${filtered[@]}" > "$TRIGGER_FILE"
+
+# ── Execution Logic Branches ─────────────────────────────────────────────────────
+if (( ${#filtered[@]} >= 12 )); then
+  > "$TRIGGER_FILE"
+
+  if [ -n "$Wifi_SSID" ]; then
+    dunstify -u normal -h string:x-dunst-stack-tag:"ip-monitor" "󰤫 Wi-Fi リセット" "接続を再起動しています: $Wifi_SSID"
+    iwctl station wlan0 disconnect 2>/dev/null
+    sleep 2
+    iwctl station wlan0 connect "$Wifi_SSID" 2>/dev/null
+
+    retry=0
+    while [ $retry -lt 8 ]; do
+      sleep 1
+      current_ip=$(get_ip)
+      [ -n "$current_ip" ] && break
+      ((retry++))
+    done
+
+    # State genuinely changed because of the reconnect — cache must be redone.
+    _refresh_iwctl_cache
+    wifi_state="$CUR_WIFI_STATE"
+    Wifi_SSID="$CUR_SSID"
+  fi
+
+  _kill_monitor
+  ( _start_monitor ) &
+  disown
+
+  if [ "$wifi_state" = "connected" ] && [ -n "$current_ip" ]; then
+    dunstify -u low -h string:x-dunst-stack-tag:"ip-monitor" \
+      "󰤨 再接続完了" "wlan0: $Wifi_SSID ($current_ip)"
+  else
+    dunstify -u critical -h string:x-dunst-stack-tag:"ip-monitor" \
+      "󰤭 IP アドレスなし" "接続済みですが IPv4 がありません — 監視開始"
+  fi
+
+elif [ "$wifi_state" = "connected" ] && [ -z "$current_ip" ]; then
+  read -r last_remind < "$NO_IP_REMIND_FILE" 2>/dev/null
+  time_since=$(( now - ${last_remind:-0} ))
+
+  if (( time_since >= NO_IP_REMIND_INTERVAL )); then
+    echo "$now" > "$NO_IP_REMIND_FILE"
+    if _is_monitor_alive; then
+      dunstify -u critical -h string:x-dunst-stack-tag:"ip-monitor" \
+        "󰤭 IP 未取得" "接続済みですが IPv4 がありません — 監視中"
+    else
+      ( _start_monitor ) &
+      disown
+      dunstify -u critical -h string:x-dunst-stack-tag:"ip-monitor" \
+        "󰤭 IP アドレスなし" "接続済みですが IPv4 がありません — 監視開始"
+    fi
+  fi
+else
+  rm -f "$NO_IP_REMIND_FILE"
+  # Also make sure a monitor is running under normal steady-state operation.
+  if ! _is_monitor_alive; then
+    ( _start_monitor ) &
+    disown
+  fi
+fi
+
+# ── Keyboard Layout ──────────────────────────────────────────────────────────────
+Keymap=$(hyprctl devices -j | jq -r '.keyboards[] | select(.main == true) | .active_keymap' 2>/dev/null)
+if [ "$Keymap" = "English (US)" ] || [ -z "$Keymap" ]; then
+  Keymap=""
+else
+  Keymap="\n  キーボード: $Keymap"
+fi
+
+# ── Battery ──────────────────────────────────────────────────────────────────────
+Bat0_Path="/sys/class/power_supply/BAT0"
+read -r power < "$Bat0_Path/capacity" 2>/dev/null || power=0
+read -r status < "$Bat0_Path/status" 2>/dev/null || status="Unknown"
+
+if [ "$power" -ge 90 ]; then icon="󰂂"
+elif [ "$power" -ge 70 ]; then icon="󰂀"
+elif [ "$power" -ge 40 ]; then icon="󰁽"
+elif [ "$power" -ge 20 ]; then icon="󰁻"
+else icon="󰁺"
+fi
+
+case "$status" in
+  Charging)     statusIcon="󰶼 充電中" ;;
+  Discharging)  statusIcon="󰶹 放電中" ;;
+  Full)         statusIcon="󰽙 満充電" ;;
+  *)            statusIcon="󰝷 非充電" ;;
+esac
+
+# ── Wi-Fi UI Assembly ────────────────────────────────────────────────────────────
+if [[ "$wifi_state" =~ ^[cC]onnected$ ]]; then
+  wifi_state="接続済み"
+else
+  wifi_state="切断"
+fi
+
+[ -z "$Wifi_SSID" ] && Wifi_SSID="󰝷  なし"
+
+RSSI_value=$(get_rssi)
+
+if [ "$wifi_state" != "接続済み" ] || [ -z "$RSSI_value" ] || [ "$RSSI_value" -eq 0 ]; then
+  Wifi_Icon="󰤫 "
+  RSSI_display="0"
+else
+  RSSI_display="$RSSI_value"
+  if [ "$RSSI_value" -ge -55 ]; then Wifi_Icon="󰤨 "
+  elif [ "$RSSI_value" -ge -70 ]; then Wifi_Icon="󰤥 "
+  elif [ "$RSSI_value" -ge -80 ]; then Wifi_Icon="󰤢 "
+  else Wifi_Icon="󰤟 "
+  fi
+fi
+
+Wifi_fullInfo=" $Wifi_Icon $RSSI_display dBm $Wifi_state: \n 󰀂 $Wifi_SSID"
+
+# ── VPN ──────────────────────────────────────────────────────────────────────────
+iface=$(wg show interfaces 2>/dev/null)
+vvv="󰖂 VPN:"
+
+if [[ "$wifi_state" =~ ^[dD]isconnected$ ]]; then
+  vpn_status=""
+  Wifi_fullInfo=" $Wifi_Icon-$RSSI_value dBm $Wifi_state"
+else
+  if [ -n "$iface" ]; then
+    case "$iface" in
+      *-CA-*)         vpn_status="${vvv}🇨🇦 CA カナダ" ;;
+      *-CH-*)         vpn_status="${vvv}🇨🇭 CH スイス" ;;
+      *-JP-*)         vpn_status="${vvv}🇯🇵 JP 日本" ;;
+      *-MX-*)         vpn_status="${vvv}🇲🇽 MX メキシコ" ;;
+      *-NL-*)         vpn_status="${vvv}🇳🇱 NL オランダ" ;;
+      *-NO-*|*-NOR-*) vpn_status="${vvv}🇳🇴 NO ノルウェー" ;;
+      *-PL-*)         vpn_status="${vvv}🇵🇱 PL ポーランド" ;;
+      *-SG-*)         vpn_status="${vvv}🇸🇬 SG シンガポール" ;;
+      *-US-*)         vpn_status="${vvv}🇺🇸 US アメリカ" ;;
+      *)              vpn_status="${vvv}󰶼 " ;;
+    esac
+    vpn_status="\n $vpn_status"
+  else
+    vpn_status=""
+  fi
+fi
+
+
+
+# ── Bluetooth ────────────────────────────────────────────────────────────────────
+BT_powered=$(cat /sys/class/bluetooth/hci0/rfkill*/state 2>/dev/null)
+BT_state=""
+
+if [ "$BT_powered" != "1" ]; then
+  BT_state="\n  オフ"
+else
+  connected_devs=$(bluetoothctl devices Connected 2>/dev/null)
+  BT_macs=$(echo "$connected_devs" | awk '/Device/ {print $2}')
+
+  if [ -z "$BT_macs" ]; then
+    BT_state="\n 󰂲 未接続"
+  else
+    # Clear BT_state so connected devices do NOT render in the main dunstify banner
+    BT_state=""
+    
+    for mac in $BT_macs; do
+      BT_mac_info=$(bluetoothctl info "$mac" 2>/dev/null)
+      Connected_name=$(echo "$BT_mac_info" | awk -F': ' '/Name:/ {print $2}')
+      
+      Connected_battery=$(echo "$BT_mac_info" | awk -F'[()]' '/Battery Percentage/ {print $2}' | tr -d '% ')
+      if [ -z "$Connected_battery" ]; then
+        Connected_battery=$(echo "$BT_mac_info" | awk -F'[:]' '/Battery Percentage/ {print $2}' | tr -d ' %')
+      fi
+
+      Device_class=$(echo "$BT_mac_info" | awk '/Icon:/ {print $2}')
+      stack_tag="BT_$mac"
+
+      case "$Device_class" in
+        audio-headphones|audio-card) DeviceIcon="󰋋 " ;;
+        input-mouse)                 DeviceIcon="󰍽 " ;;
+        input-keyboard)              DeviceIcon="󰌌 " ;;
+        phone)                       DeviceIcon="󰏲 " ;;
+        *)                           DeviceIcon="󰝷 " ;;
+      esac
+
+      if [ -n "$Connected_battery" ]; then
+        if [ "$Connected_battery" -ge 100 ]; then Connected_icon=" "
+        elif [ "$Connected_battery" -ge 80 ]; then Connected_icon=" "
+        elif [ "$Connected_battery" -ge 60 ]; then Connected_icon=" "
+        elif [ "$Connected_battery" -ge 40 ]; then Connected_icon=" "
+        else Connected_icon=" "
+        fi
+        
+        dunstify -u low -h string:x-dunst-stack-tag:"$stack_tag" -h int:value:"$Connected_battery" "󰂱 $Connected_name $DeviceIcon" "$Connected_icon $Connected_battery%"
+      else
+        dunstify -u low -h string:x-dunst-stack-tag:"$stack_tag" "󰂱 $Connected_name $DeviceIcon" "接続済み"
+      fi
+    done
+  fi
+fi
+
+
+
+
+# ── Render Info Window ───────────────────────────────────────────────────────────
+dunstify -u normal -h string:x-dunst-stack-tag:"info" -h int:value:"$power" \
+  " $(LANG=ja_JP.UTF-8 date +"%-H:%M %-m月%-d日 %A")" \
+  "$Wifi_fullInfo$vpn_status$BT_state$Keymap \n\n $statusIcon $icon $power%"
+
+exit 0

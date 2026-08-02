@@ -25,21 +25,24 @@ Latitude="34.6937N"
 Longitude="135.5023E"
 Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude" | head -n1)
 Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude" | head -n1)
-# times in minutes. Nowtime = minutes since midnight (now)
-# Nowtime=$((10#$(date +%H)*60 + 10#$(date +%M)))
-Nowtime=$(( $(date +%H)*60 + $(date +%-M)))
+
+# Fixed: Enforced base-10 calculation by stripping leading zeros from both hours and minutes
+Nowtime=$(( 10#$(date +%H)*60 + 10#$(date +%M) ))
+
 Dawntime=$((10#${Dawn%:*}*60 + 10#${Dawn#*:}))
-(( Dawntime < 60 )) && Dawntime=60 # Prevents negative-time.
+(( Dawntime < 60 )) && Dawntime=60 
 Dusktime=$((10#${Dusk%:*}*60 + 10#${Dusk#*:}))
-(( Dusktime > 1439 )) && Dusktime=1439 # Clamp down dusk not later than midnight.
-# This all goes straight out of the window in arctic conditions however.
+(( Dusktime > 1439 )) && Dusktime=1439 
 
 month=$(date +%-m)
-
 Monitor="eDP-1"
-DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Less_talk..._more_action.webp"
 
-season="Spring" # Set Spring as default, as it is my favourite.
+# Ideas for more wallpaper shifts.
+# Meteorlogical shifts (raining, cloudy, sunny, squalls, etc)
+# CPU temperature
+# Number of workspaces (and which workspaces) in use?
+
+# ── Seasonal Baseline Assignment ─────────────────────────────────────────────────
 case "$month" in
   3|4|5)
     season="Spring 春"
@@ -62,32 +65,34 @@ case "$month" in
     DefaultWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Mistakes_are_proof_that_you_are_trying.jpg"
     ;;
 esac
+
 flagFile="/run/user/$UID/season_notified"
 if [[ ! -f "$flagFile" ]]; then
   Notify 1 6000 "$seasoncolour" 24 "$season"
-    touch "$flagFile"
+  touch "$flagFile"
 fi
 
-LowBatteryWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust_Yourself._Eveything_Will_Be_Okay.png"
+LowBatteryWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Trust_Yourself._Eveything_Will_Be_Okay.png"
+MorningWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Quitting_is_not_an_option!.jpg"
+NightWallpaper="/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/Trust_Yourself._Eveything_Will_Be_Okay.png"
 
-MorningWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Quitting_is_not_an_option!.jpg"
-NightWallpaper=/home/nemi/Desktop/Wallpapers/chill-chill-joirnal/"Trust_Yourself._Eveything_Will_Be_Okay.png"
-target="$DefaultWallpaper"
-
+# ── Mutually Exclusive Chronological Evaluation ──────────────────────────────────
 if [[ "$Status" == "Discharging" ]] && (( BatteryLevel <= 20 )); then
- dunstify -u critical -h string:x-dunst-stack-tag:power1 -h int:value:"$BatteryLevel" "$(date +"%H:%M")" "$BatteryLevel"
- target="$LowBatteryWallpaper"
+  dunstify -u critical -h string:x-dunst-stack-tag:power1 -h int:value:"$BatteryLevel" "$(date +"%H:%M")" "$BatteryLevel"
+  target="$LowBatteryWallpaper"
 else
-  if (( Nowtime < Dawntime || Nowtime >= Dusktime )); then
-    target="$NightWallpaper"
-  elif (( Nowtime >= Dawntime - 60 && Nowtime < Dawntime + 120 )); then
+  # 1. Morning window checked first to prevent absorption by night constraints
+  if (( Nowtime >= (Dawntime - 60) && Nowtime < (Dawntime + 120) )); then
     target="$MorningWallpaper"
+  # 2. Night evaluation: strictly execution outside of daylight operations
+  elif (( Nowtime < (Dawntime - 60) || Nowtime >= Dusktime )); then
+    target="$NightWallpaper"
+  # 3. Daylight hours: fall back to seasonal configuration
   else
     target="$DefaultWallpaper"
   fi
 fi
 
-# Path to store current wallpaper state
 tmpState="/run/user/$UID/activeWallpaper"
 sessionFlag="/run/user/$UID/wallpaperInit"
 mkdir -p "$(dirname "$tmpState")"
@@ -99,9 +104,7 @@ UpdateWallpaper() {
   echo "$img" > "$tmpState"
 }
 
-# Reading previous state
 if [[ -f "$tmpState" ]]; then
-  # read -r activeTarget < "$tmpState"
   activeTarget=$(<"$tmpState")
 else
   activeTarget=""
@@ -112,14 +115,14 @@ if ([[ ! -f "$sessionFlag" ]] && (( uptime_s < 300 ))) || [ "$target" != "$activ
   UpdateWallpaper "$target"
   touch "$sessionFlag"
   if [[ "$target" == "$NightWallpaper" ]]; then
-  # hyprctl notify 1 3000 "rgb(81007f)" "fontsize:24 Entering the crepuscule"
-  Notify 1 5000 "rgb(4b0082)" 24 "Entering the crepuscule"
+    Notify 1 5000 "rgb(4b0082)" 24 "Entering the crepuscule"
   elif [[ "$target" == "$MorningWallpaper" ]]; then
     Notify 1 5000 "rgb(add8e6)" 24 "Entering matutinal hours"
   elif [[ "$target" == "$LowBatteryWallpaper" ]]; then
     Notify 0 9000 "rgb(ff0000)" 35 "Low Battery: $BatteryLevel% remaining"
   else
-    # hyprctl notify 1 3000 "rgb(ff0000)" "fontsize:24 Entering photopic phase"
     Notify 1 5000 "rgb(ffffff)" 24 "Daytime"
   fi
 fi
+
+exit 0

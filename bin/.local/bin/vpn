@@ -8,7 +8,9 @@ fi
 
 mapfile -t configs < <(find "$wireguardDirectory" -maxdepth 1 -name '*.conf' -printf '%f\n' 2>/dev/null | sed 's/\.conf$//')
 [ "${#configs[@]}" -eq 0 ] && exit 1
-choice=$(printf "%s\n" "${configs[@]}" | fzf --prompt="VPN >")
+
+# Option A: Directly navigate the list using bare j and k keys
+choice=$(printf "%s\n" "${configs[@]}" | fzf --prompt="VPN > " --no-input --bind="j:down,k:up")
 [ -z "$choice" ] && exit 0
 
 active=$(wg show interfaces)

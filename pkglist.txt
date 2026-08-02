@@ -22,6 +22,7 @@ clamav
 clamtk
 code
 cool-retro-term
+cups
 deno
 discord
 dunst
@@ -41,6 +42,7 @@ fcitx5-mozc
 fcitx5-qt
 fd
 ffmpegthumbnailer
+filezilla
 firefox
 freecad
 fuzzel
@@ -48,6 +50,7 @@ fzf
 gallery-dl-bin
 gimp
 git
+github-cli
 grim
 grub
 gst-libav
@@ -72,6 +75,7 @@ lib32-gst-plugins-good
 lib32-gstreamer
 lib32-vulkan-intel
 libcamera
+libinput-tools
 libmtp
 libpulse
 libva-intel-driver
@@ -79,6 +83,7 @@ linux
 linux-firmware
 luarocks
 lutris
+lychee
 markdown-oxide-git
 mecab-ipadic
 mpv
@@ -134,13 +139,13 @@ slurp
 smartmontools
 socat
 sof-firmware
+sshfs
 steam
 stow
 sunwait
 swaync
 systemd-resolvconf
 tikzit
-tikzit-debug
 tk
 tlp
 tmux
@@ -183,7 +188,7 @@ yay
 yay-debug
 yazi
 ydotool
-yt-dlp
+yt-dlp-nightly-bin
 zen-browser-bin
 zram-generator
 zsh
