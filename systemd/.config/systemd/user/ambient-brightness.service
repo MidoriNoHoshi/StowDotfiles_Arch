@@ -1,0 +1,41 @@
+[Unit]
+Description=Ambient-light adaptive display brightness daemon (webcam + iwd + Hyprland idle)
+# Only makes sense once there's a graphical Wayland session (Hyprland) to
+# control brightness for, and once the network stack (iwd) is up so our
+# indoor/outdoor SSID heuristic has something to query.
+After=graphical-session.target iwd.service
+Wants=graphical-session.target
+
+[Service]
+Type=simple
+
+# Adjust this path to wherever you actually placed the script.
+ExecStart=/usr/bin/python3 %h/.local/bin/ambient_brightness_daemon.py
+
+# Restart on crash, but don't hot-loop if something is fundamentally broken
+# (e.g. brightnessctl missing, camera permanently unavailable).
+Restart=on-failure
+RestartSec=5s
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+# Modest niceness: this is a background convenience daemon, not something
+# that should ever contend with foreground/interactive work for CPU time.
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+
+# Hardening (safe defaults for a user service that only needs to read
+# /dev/video0 and shell out to brightnessctl/iwctl/loginctl):
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=true
+# SupplementaryGroups=video is normally handled by your user already being
+# in the `video` group (required for /dev/video0 and /sys/class/backlight
+# write access) -- add yourself with:
+#   sudo usermod -aG video $USER
+# then log out/in for it to take effect.
+
+[Install]
+WantedBy=default.target
