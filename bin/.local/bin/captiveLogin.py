@@ -1,1 +1,1 @@
-/home/nemi/Raven/wayInfo/captiveLogin.py
+../../../../Raven/wayInfo/captiveLogin.py

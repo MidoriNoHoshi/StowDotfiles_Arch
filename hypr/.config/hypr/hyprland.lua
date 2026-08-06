@@ -11,19 +11,19 @@ local home = os.getenv("HOME")
 --------------------------------------------------------------------------------
 -- Monitors
 --------------------------------------------------------------------------------
-hl.monitor({
-    output = "eDP-1",
-    mode = "1920x1200@60hz",
-    position = "auto",
-    scale = 1,
-})
-
-hl.monitor({
-    output = "HDMI-A-1",
-    mode = "preferred",
-    position = "auto",
-    scale = "auto",
-})
+-- hl.monitor({
+--     output = "eDP-1",
+--     mode = "1920x1200@60hz",
+--     position = "auto",
+--     scale = 1,
+-- })
+--
+-- hl.monitor({
+--     output = "HDMI-A-1",
+--     mode = "preferred",
+--     position = "auto",
+--     scale = "auto",
+-- })
 
 --------------------------------------------------------------------------------
 -- Environment Variables
@@ -40,59 +40,59 @@ hl.env("HYPRSHOT_DIR", home .. "/Pictures/Screeneshots")
 -- Core Configuration
 --------------------------------------------------------------------------------
 hl.config({
-    general = {
-        gaps_in = 4,
-        gaps_out = 8,
-        resize_on_border = false,
-        allow_tearing = false,
-        layout = "dwindle",
-        border_size = 1,
-        col = {
-            active_border = "rgba(d8d8d8cc)",
-        },
-    },
-    decoration = {
-        rounding = 8,
-        rounding_power = 2,
-        active_opacity = 1.0,
-        inactive_opacity = 1.0,
-        shadow = {
-            enabled = true,
-            range = 4,
-            render_power = 3,
-            color = "rgba(1a1a1aee)",
-        },
-        blur = {
-            enabled = true,
-            size = 3,
-            passes = 1,
-            vibrancy = 0.1696,
-        },
-    },
-    dwindle = {
-        preserve_split = true,
-    },
-    master = {
-        new_status = "master",
-    },
-    misc = {
-        force_default_wallpaper = 0,
-        disable_hyprland_logo = true,
-        disable_splash_rendering = true,
-    },
-    input = {
-        kb_layout = "us,us",
-        kb_variant = ",dvorak",
-        kb_options = "grp:alt_shift_toggle",
-        special_fallthrough = true,
-        follow_mouse = 1,
-        sensitivity = 0,
-        touchpad = {
-            natural_scroll = false,
-            disable_while_typing = true,
-            tap_to_click = true,
-        },
-    },
+	general = {
+		gaps_in = 4,
+		gaps_out = 8,
+		resize_on_border = false,
+		allow_tearing = false,
+		layout = "dwindle",
+		border_size = 1,
+		col = {
+			active_border = "rgba(d8d8d8cc)",
+		},
+	},
+	decoration = {
+		rounding = 8,
+		rounding_power = 2,
+		active_opacity = 1.0,
+		inactive_opacity = 1.0,
+		shadow = {
+			enabled = true,
+			range = 4,
+			render_power = 3,
+			color = "rgba(1a1a1aee)",
+		},
+		blur = {
+			enabled = true,
+			size = 3,
+			passes = 1,
+			vibrancy = 0.1696,
+		},
+	},
+	dwindle = {
+		preserve_split = true,
+	},
+	master = {
+		new_status = "master",
+	},
+	misc = {
+		force_default_wallpaper = 0,
+		disable_hyprland_logo = true,
+		disable_splash_rendering = true,
+	},
+	input = {
+		kb_layout = "us,us",
+		kb_variant = ",dvorak",
+		kb_options = "grp:alt_shift_toggle",
+		special_fallthrough = true,
+		follow_mouse = 1,
+		sensitivity = 0,
+		touchpad = {
+			natural_scroll = false,
+			disable_while_typing = true,
+			tap_to_click = true,
+		},
+	},
 })
 
 --------------------------------------------------------------------------------
@@ -125,19 +125,19 @@ hl.animation("workspacesOut", true, 1.94, "almostLinear", "fade")
 -- Devices
 --------------------------------------------------------------------------------
 hl.device({
-    name = "elan0676:00-04f3:3195-touchpad",
-    enabled = true,
-    disable_while_typing = true,
+	name = "elan0676:00-04f3:3195-touchpad",
+	enabled = true,
+	disable_while_typing = true,
 })
 
 hl.device({
-    name = "elecom-shellpha",
-    sensitivity = -0.6,
+	name = "elecom-shellpha",
+	sensitivity = -0.6,
 })
 
 hl.device({
-    name = "tpps/2-elan-trackpoint",
-    sensitivity = -0.4,
+	name = "tpps/2-elan-trackpoint",
+	sensitivity = -0.4,
 })
 
 --------------------------------------------------------------------------------
@@ -147,13 +147,13 @@ hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0, border = 0,
 hl.workspace_rule({ workspace = "f[1]", gaps_out = 0, gaps_in = 0, border = 0, rounding = 0 })
 
 hl.window_rule({
-    name = "suppress_event_maximize",
-    match = { class = ".*" },
+	name = "suppress_event_maximize",
+	match = { class = ".*" },
 })
 
 hl.window_rule({
-    name = "no_focus_on_unnamed_xwayland",
-    match = { class = "^$", title = "^$", xwayland = true },
+	name = "no_focus_on_unnamed_xwayland",
+	match = { class = "^$", title = "^$", xwayland = true },
 })
 
 --------------------------------------------------------------------------------
@@ -184,9 +184,9 @@ hl.bind(mainMod .. " + j", hl.dsp.focus({ direction = "down" }))
 
 -- Programmatic Workspace Bindings (1 through 10)
 for i = 1, 10 do
-    local key = tostring(i % 10) -- 1..9, then 0 for workspace 10
-    hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
-    hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
+	local key = tostring(i % 10) -- 1..9, then 0 for workspace 10
+	hl.bind(mainMod .. " + " .. key, hl.dsp.focus({ workspace = i }))
+	hl.bind(mainMod .. " + SHIFT + " .. key, hl.dsp.window.move({ workspace = i }))
 end
 
 -- Workspace 11 (Grave / Tilde)
@@ -205,30 +205,30 @@ hl.bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), { mouse = true })
 
 -- Hardware / Media Keys
 hl.bind(
-    "XF86AudioRaiseVolume",
-    hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 1%+ --limit 1.2 && " .. home .. "/.local/bin/volume"),
-    { locked = true }
+	"XF86AudioRaiseVolume",
+	hl.dsp.exec_cmd("wpctl set-volume -l 1 @DEFAULT_AUDIO_SINK@ 1%+ --limit 1.2 && " .. home .. "/.local/bin/volume"),
+	{ locked = true }
 )
 hl.bind(
-    "XF86AudioLowerVolume",
-    hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%- && " .. home .. "/.local/bin/volume"),
-    { locked = true }
+	"XF86AudioLowerVolume",
+	hl.dsp.exec_cmd("wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%- && " .. home .. "/.local/bin/volume"),
+	{ locked = true }
 )
 hl.bind(
-    "XF86AudioMute",
-    hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && " .. home .. "/.local/bin/volume"),
-    { locked = true }
+	"XF86AudioMute",
+	hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle && " .. home .. "/.local/bin/volume"),
+	{ locked = true }
 )
 hl.bind("XF86AudioMicMute", hl.dsp.exec_cmd("wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"), { locked = true })
 hl.bind(
-    "XF86MonBrightnessUp",
-    hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+ && " .. home .. "/.local/bin/brightness"),
-    { locked = true }
+	"XF86MonBrightnessUp",
+	hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%+ && " .. home .. "/.local/bin/brightness"),
+	{ locked = true }
 )
 hl.bind(
-    "XF86MonBrightnessDown",
-    hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%- && " .. home .. "/.local/bin/brightness"),
-    { locked = true }
+	"XF86MonBrightnessDown",
+	hl.dsp.exec_cmd("brightnessctl -e4 -n2 set 5%- && " .. home .. "/.local/bin/brightness"),
+	{ locked = true }
 )
 hl.bind("XF86PickupPhone", hl.dsp.exec_cmd(home .. "/.local/bin/mouse-sensitivity down"), { locked = true })
 hl.bind("XF86HangupPhone", hl.dsp.exec_cmd(home .. "/.local/bin/mouse-sensitivity up"), { locked = true })
@@ -242,11 +242,11 @@ hl.bind("XF86AudioPrev", hl.dsp.exec_cmd("playerctl previous"), { locked = true 
 -- Autostart Engine
 --------------------------------------------------------------------------------
 hl.on("hyprland.start", function()
-    hl.exec_cmd("hyprpaper")
-    hl.exec_cmd("fcitx5-remote -r")
-    hl.exec_cmd("fcitx5 -d --replace")
-    hl.exec_cmd("dunst")
-    hl.exec_cmd("rm /run/user/1000/activeWallpaper")
-    hl.exec_cmd("sleep 3 && " .. home .. "/.local/bin/wallpaperInfo")
-    hl.exec_cmd("sleep 3 && " .. home .. "/.local/bin/information")
+	hl.exec_cmd("hyprpaper")
+	hl.exec_cmd("fcitx5-remote -r")
+	hl.exec_cmd("fcitx5 -d --replace")
+	hl.exec_cmd("dunst")
+	hl.exec_cmd("rm /run/user/1000/activeWallpaper")
+	hl.exec_cmd("sleep 3 && " .. home .. "/.local/bin/wallpaperInfo")
+	hl.exec_cmd("sleep 3 && " .. home .. "/.local/bin/information")
 end)
