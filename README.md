@@ -8,8 +8,7 @@ These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before
   Your browser does not support the video tag.
 </video>
 
-
-# Setup:
+# Setup
 
 | Ingredient                | Flavour      |
 | ------------------------- | ------------ |
@@ -29,7 +28,9 @@ These are my personal dotfiles for my Arch Linux + Hyprland laptop setup. Before
 ---
 
 # installation
+
 > Clone the repository:
+
 ```bash
 sudo pacman -S stow
 git clone: ~/dotfiles
@@ -37,21 +38,27 @@ cd ~/dotfiles
 ```
 
 > Install Packages
+
 ```bash
 stow *
 ```
+
+There's more services so stow may be a much bigger pain the in ass. Need to possibly update?
 
 ---
 
 # Other Configurations
 
 ## Fcitx5
+
 Need to be re-installed through fcitx5 configuration tool
+
 - fcitx5-mozc (Japanese)
 - fcitx5-English (US)
 - fcitx5-Norwegian (bokmål)
 
 ## KMonad (Pain in the ass)
+
 KMonad config file in `/home/$USER/.config/kmonad` as default.kbd
 
 The input for default.kbd is found in `/dev/input`. There are two directories in here to look at.<br>
@@ -80,21 +87,22 @@ Start the service:
 sudo systemctl enable --now kmonad.service
 ```
 
-
-
 ## Installing pacman and yay packages
+
 ```bash
 sudo pacman -S --needed - < pkglist.txt
 yay -S --needed - < aurlist.txt
 ```
 
 ### ly display manager
+
 ```bash
 sudo systemctl enable ly.service
 sudo systemctl start ly.service
 ```
 
 ## systemd services for notification scripts
+
 ```bash
 systemctl --user daemon-reload
 systemctl --user enable batteryNotif5m.timer
@@ -104,7 +112,9 @@ systemctl --user start batteryNotif1m.timer
 ```
 
 ### Keys
+
 > SSH Keys
+
 ```bash
 ssh-keygen -t ed25519 -C <Email>
 ssh-add ~/.ssh/id_ed25519
@@ -117,28 +127,33 @@ ssh-add ~/.ssh/id_ed25519
 - **Ctrl + `** => Quick phrase. Only appears if the keybinding is pressed while typing.
 - **f7** => When writing in Japanese, turns text into Katakana (カタカナ).
 
-### KMonad remapping:
+### KMonad remapping
 
 - **Capslock** => SUPER
 - **Ctrl** => Tab
 - **Tab** => Ctrl
 - **Super / Meta** => Esc
 
-### Script function keys:
+### Script function keys
 
-- **f12** => Information key. Date and time, Wifi connection, Battery status.
+- **f12** => Information key. Date and time, Bluetooth, VPN (Wireguard), Wifi connection, Battery status. If connected to Doutor, starts playwright script to automatically re-connect through network login page / portal. Press 12x in quick succession for quick WiFi refresh.
 - **f9** => Hyprpicker (Colour picker).
 
 - **print** => Hyprshot (screenshot).
+- **Super + print** => Hyprshot (Screenrecording)
 - **PickupPhone** => Decreases mouse sensitivity.
 - **HangupPhone** => Increases mouse sensitivity.
 
-### Hyprland keybindings:
+Volume and brightness keys work normally.
+
+- **Super + Brightness** => Ambient light daemon toggle (uses camera feed)
+
+### Hyprland keybindings
 
 - **Super + Q** => launches terminal (kitty)
 - **Super + C** => killactive
 - **Super + I** => launches zen browser (Internet browser)
-- **Super + E** => launches Nemo (File manager) 
+- **Super + E** => launches Nemo (File manager)
 - **Super + V** => Toggle floating
 - **Super + R** => Startup fuzzel (launcher)
 - **Super + A** => launches Anki (Anki review cards)
