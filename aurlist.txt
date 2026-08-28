@@ -15,9 +15,12 @@ mecab-ipadic
 nemo-preview
 nodejs-live-server
 onlyoffice-bin
+python-sdbus
+python-sdbus-debug
 python312
 qimgv
 rmlint
+rtw88-dkms-git
 sunwait
 tikzit
 ttf-hanazono

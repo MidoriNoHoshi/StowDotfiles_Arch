@@ -1,11 +1,13 @@
 7zip
 adobe-source-han-sans-jp-fonts
 adobe-source-han-serif-jp-fonts
+aircrack-ng
 android-studio
 android-tools
 android-udev
 ani-cli
 anki
+ansible
 arduino-ide-bin
 aylurs-gtk-shell-git
 baobab
@@ -25,6 +27,9 @@ cool-retro-term
 cups
 deno
 discord
+dkms
+docker
+docker-compose
 dunst
 earlyoom
 easyeffects
@@ -48,6 +53,7 @@ freecad
 fuzzel
 fzf
 gallery-dl-bin
+gifsicle
 gimp
 git
 github-cli
@@ -62,6 +68,7 @@ hyprland
 hyprpaper
 hyprpicker
 hyprshot
+inkscape
 intel-media-driver
 intel-ucode
 iwd
@@ -81,6 +88,7 @@ libpulse
 libva-intel-driver
 linux
 linux-firmware
+linux-headers
 luarocks
 lutris
 lychee
@@ -119,10 +127,14 @@ pipewire-pulse
 pipewire-v4l2
 playerctl
 polkit-gnome
+powertop
 prismlauncher
+python-opencv
 python-pandas
 python-pip
 python-pipx
+python-sdbus
+python-sdbus-debug
 python312
 qbittorrent
 qimgv
@@ -132,9 +144,12 @@ reflector
 retroarch
 retroarch-assets-ozone
 rmlint
+rtw88-dkms-git
+ruby
 rust
 sassc
 seahorse
+signal-desktop
 slurp
 smartmontools
 socat
@@ -145,6 +160,7 @@ stow
 sunwait
 swaync
 systemd-resolvconf
+tcpdump
 tikzit
 tk
 tlp
@@ -174,6 +190,7 @@ wf-recorder
 wget
 wireguard-go-git
 wireguard-tools
+wireless-regdb
 wireless_tools
 wireplumber
 wireshark-cli
