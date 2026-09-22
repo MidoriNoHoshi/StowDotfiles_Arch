@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp}"
+SOCKET_PATH="${RUNTIME_DIR}/manga_ocr.sock"
+TMP_IMG="$(mktemp "${RUNTIME_DIR}/ocr_capture.XXXXXX.png")"
+
+cleanup() { rm -f "${TMP_IMG}"; }
+trap cleanup EXIT
+
+if [[ ! -S "${SOCKET_PATH}" ]]; then
+  notify-send "OCR Error" "manga-ocr daemon is not running (systemctl --user status manga-ocr-daemon)."
+  exit 1
+fi
+
+# Region select via slurp -> capture via grim. slurp exits non-zero if the
+# user cancels with Escape, which makes grim fail too — exit quietly then.
+if ! grim -g "$(slurp)" "${TMP_IMG}" 2>/dev/null; then
+  exit 0
+fi
+
+# Pass the paths as argv, not interpolated into the Python source, so a path
+# containing a quote or backslash can never break out of the script text.
+# The daemon now replies with JSON ({"text","furigana","words":[...]}) or
+# "ERROR: ...". This inline client parses that and prints two blocks
+# separated by a literal ASCII record-separator (\x1e) — a delimiter that
+# will never appear in real text — so bash can split them with plain
+# parameter expansion, no jq dependency needed.
+RESULT="$(
+  python3 - "${TMP_IMG}" "${SOCKET_PATH}" <<'PYEOF'
+import json
+import socket
+import sys
+
+img_path, socket_path = sys.argv[1], sys.argv[2]
+s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+s.connect(socket_path)
+s.sendall(img_path.encode("utf-8"))
+raw = s.recv(65536).decode("utf-8")
+s.close()
+
+if raw.startswith("ERROR:"):
+    print(raw, end="")
+    sys.exit(0)
+
+try:
+    payload = json.loads(raw)
+except json.JSONDecodeError:
+    print(raw, end="")  # fall back to showing whatever we got
+    sys.exit(0)
+
+furigana = payload.get("furigana") or payload.get("text") or ""
+words = payload.get("words") or []
+
+meaning_lines = []
+for w in words:
+    meanings = w.get("meanings") or []
+    gloss = "; ".join(meanings) if meanings else "?"
+    reading = f"（{w['reading']}）" if w.get("reading") else ""
+    meaning_lines.append(f"{w['surface']}{reading}: {gloss}")
+
+meanings_block = "\n".join(meaning_lines)
+print(f"{furigana}\x1e{meanings_block}", end="")
+PYEOF
+)"
+
+if [[ -z "$RESULT" ]]; then
+  notify-send -t 2000 "OCR" "No text detected."
+  exit 0
+fi
+
+if [[ "$RESULT" == ERROR:* ]]; then
+  notify-send "OCR Error" "$RESULT"
+  exit 1
+fi
+
+NOTIFY_TEXT="${RESULT%%$'\x1e'*}"
+MEANINGS_TEXT="${RESULT#*$'\x1e'}"
+
+CLIP_TEXT="${NOTIFY_TEXT}"
+if [[ -n "$MEANINGS_TEXT" ]]; then
+  CLIP_TEXT="${NOTIFY_TEXT}"$'\n\n'"${MEANINGS_TEXT}"
+  # NOTIFY_TEXT="${NOTIFY_TEXT}"$'\n'"(full glosses copied to clipboard)"
+fi
+
+printf '%s' "$CLIP_TEXT" | wl-copy
+notify-send -t 6000 "OCR Text" "$NOTIFY_TEXT"
+
+# Phone push via the shared notify-phone helper — sends the FULL text
+# (furigana + meanings), not the shortened desktop version, since there's
+# no clipboard to fall back on for the glosses once it's on your phone.
+"$HOME/.local/bin/notify-phone" "Japanese OCR" "$CLIP_TEXT" jp

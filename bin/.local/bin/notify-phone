@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+# Shared ntfy.sh push-notification helper.
+# Usage: notify-phone "<title>" "<message>" [tag]
+#   tag is an optional ntfy emoji-tag shortcode (e.g. jp, video_camera,
+#   warning) — see https://docs.ntfy.sh/emojis/ for the full list.
+#
+# Topic lives in one place (~/.config/ntfy-topic) so every script that
+# wants to push to your phone shares it, rather than each script hardcoding
+# its own copy of the string.
+set -euo pipefail
+
+TOPIC_FILE="${HOME}/.config/ntfy-topic"
+
+if [[ ! -f "$TOPIC_FILE" ]]; then
+  echo "notify-phone: no topic configured. Put your ntfy topic name in ${TOPIC_FILE}" >&2
+  exit 1
+fi
+
+NTFY_TOPIC="$(<"$TOPIC_FILE")"
+TITLE="${1:?usage: notify-phone <title> <message> [tag]}"
+MESSAGE="${2:?usage: notify-phone <title> <message> [tag]}"
+TAG="${3:-bell}"
+
+# -m 5 caps how long a dead connection can stall the calling script.
+# Failure here (no wifi, ntfy.sh down) is silent and never fails the caller.
+curl -s -m 5 \
+  -H "Title: ${TITLE}" \
+  -H "Tags: ${TAG}" \
+  --data-binary "${MESSAGE}" \
+  "https://ntfy.sh/${NTFY_TOPIC}" >/dev/null 2>&1 || true

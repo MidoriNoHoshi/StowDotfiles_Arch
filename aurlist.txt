@@ -3,6 +3,7 @@ ani-cli
 arduino-ide-bin
 aylurs-gtk-shell-git
 bibata-cursor-theme-bin
+claude-code
 emote
 eww
 gallery-dl-bin
@@ -16,7 +17,6 @@ nemo-preview
 nodejs-live-server
 onlyoffice-bin
 python-sdbus
-python-sdbus-debug
 python312
 qimgv
 rmlint
@@ -25,6 +25,8 @@ sunwait
 tikzit
 ttf-hanazono
 ttf-martian-mono
+uabea-next-git
+waydroid-script-git
 wireguard-go-git
 yay
 yay-debug

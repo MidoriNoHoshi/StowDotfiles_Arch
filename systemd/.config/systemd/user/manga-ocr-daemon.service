@@ -1,0 +1,14 @@
+[Unit]
+Description=manga-ocr daemon for in-game Japanese OCR
+After=graphical-session.target
+
+[Service]
+# Point this at the venv's python if manga-ocr is installed in a dedicated
+# venv rather than system-wide (recommended — it pulls in torch):
+ExecStart=%h/.local/share/manga-ocr-venv/bin/python3 %h/.local/bin/manga-ocr-daemon
+; ExecStart=%h/.local/bin/manga-ocr-daemon
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=default.target

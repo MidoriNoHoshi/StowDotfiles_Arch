@@ -1,0 +1,29 @@
+Machine-specific setup — NOT stowed, NOT tracked in git
+=========================================================
+
+Some scripts in this repo need one secret value that must never be
+committed here: the ntfy.sh topic used for phone push notifications.
+On the free public ntfy.sh server, knowing the topic string is enough to
+publish to it (and read from it) — not a password-strength secret, but
+still not something to leave sitting in git history forever, especially
+if this repo is ever public.
+
+File:     ~/.config/ntfy-topic  (plain text, just the topic string, no
+          trailing newline needed either way)
+Used by:  bin/.local/bin/notify-phone — called from ocr-capture,
+          screen-recorder, and any future script that wants to push a
+          notification to your phone.
+
+One-time setup on a fresh machine
+----------------------------------
+    NEW_TOPIC="laptop-alerts-$(openssl rand -hex 8)"
+    echo "$NEW_TOPIC" > ~/.config/ntfy-topic
+    echo "$NEW_TOPIC"
+
+Then install the ntfy app (Android/iOS/F-Droid) and subscribe to that
+exact string. That's the whole setup — no account, no server config.
+
+If you ever suspect the topic leaked (e.g. it ended up in a screenshot,
+a shared clipboard, etc.), just repeat the steps above with a new random
+string and re-subscribe on your phone — nothing else references the old
+one, so there's nothing else to update.

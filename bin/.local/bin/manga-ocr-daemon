@@ -1,0 +1,144 @@
+#!/usr/bin/env python3
+"""
+manga-ocr daemon — loads the OCR model, a MeCab tagger, and a JMdict lookup
+once, then serves annotated OCR requests over a Unix socket. Meant to run as
+a systemd --user service; see manga-ocr-daemon.service.
+
+Protocol: client connects, sends an image file path (utf-8, no trailing
+newline needed). Daemon replies with either:
+  - "ERROR: <message>"
+  - a JSON object: {"text": "...", "furigana": "...", "words": [
+        {"surface": "...", "reading": "...", "meanings": ["...", ...]}, ...
+    ]}
+Send "EXIT" to have the daemon shut itself down.
+"""
+
+import json
+import os
+import re
+import signal
+import socket
+import sys
+
+import fugashi
+import jaconv
+from jamdict import Jamdict
+from PIL import Image
+from manga_ocr import MangaOcr
+
+RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
+SOCKET_PATH = os.path.join(RUNTIME_DIR, "manga_ocr.sock")
+
+KANJI_RE = re.compile(r"[\u4e00-\u9fff]")
+# unidic pos1 categories worth looking up a meaning for; skips particles,
+# auxiliary verbs, and punctuation, which JMdict mostly can't gloss usefully.
+CONTENT_POS = {"名詞", "動詞", "形容詞", "副詞", "形状詞", "連体詞", "接続詞", "感動詞"}
+
+
+def cleanup(*_args):
+    if os.path.exists(SOCKET_PATH):
+        os.remove(SOCKET_PATH)
+    sys.exit(0)
+
+
+signal.signal(signal.SIGTERM, cleanup)
+signal.signal(signal.SIGINT, cleanup)
+
+if os.path.exists(SOCKET_PATH):
+    os.remove(SOCKET_PATH)
+
+print("Loading manga-ocr model into memory...", flush=True)
+try:
+    mocr = MangaOcr()
+except Exception as e:  # noqa: BLE001 - want this surfaced clearly either way
+    print(f"[-] Failed to load manga-ocr model: {e}", file=sys.stderr)
+    sys.exit(1)
+print("Model loaded.", flush=True)
+
+print("Loading MeCab tagger and JMdict...", flush=True)
+tagger = fugashi.Tagger()
+jam = Jamdict()
+print("Model, tagger, and dictionary loaded. Ready.", flush=True)
+
+
+def _first_attr(feat, names):
+    """Try several unidic feature field names in order — the exact schema
+    varies slightly between unidic builds, so this degrades gracefully
+    (missing furigana/meaning for a word) instead of crashing."""
+    for name in names:
+        val = getattr(feat, name, None)
+        if val and val != "*":
+            return val
+    return None
+
+
+def annotate(text: str) -> dict:
+    furigana_parts = []
+    words = []
+
+    for token in tagger(text):
+        surface = token.surface
+        feat = token.feature
+        pos1 = getattr(feat, "pos1", "") or ""
+
+        reading_kata = _first_attr(feat, ("kana", "pron", "kanaBase", "pronBase"))
+        reading = jaconv.kata2hira(reading_kata) if reading_kata else ""
+
+        if KANJI_RE.search(surface) and reading and reading != surface:
+            furigana_parts.append(f"{surface}({reading})")
+        else:
+            furigana_parts.append(surface)
+
+        # Only bother with a dictionary lookup for words actually written in
+        # kanji — pure-kana content words (です, とても, ある, ...) are the
+        # stuff you already know, and generate noise more than value here.
+        if pos1 in CONTENT_POS and KANJI_RE.search(surface):
+            lemma = _first_attr(feat, ("lemma", "orthBase", "orth")) or surface
+            lookup_word = lemma.split("-")[0]
+
+            meanings = []
+            try:
+                result = jam.lookup(lookup_word)
+                for entry in result.entries[:1]:
+                    for sense in entry.senses[:1]:
+                        for g in list(sense.gloss)[:3]:
+                            meanings.append(getattr(g, "text", None) or str(g))
+            except Exception:  # noqa: BLE001 - a bad lookup shouldn't break the capture
+                pass
+
+            if reading or meanings:
+                words.append(
+                    {"surface": surface, "reading": reading, "meanings": meanings}
+                )
+
+    return {"text": text, "furigana": "".join(furigana_parts), "words": words}
+
+
+server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+server.bind(SOCKET_PATH)
+os.chmod(
+    SOCKET_PATH, 0o600
+)  # single-user box, but no reason to leave it world-writable
+server.listen(1)
+
+try:
+    while True:
+        conn, _ = server.accept()
+        try:
+            data = conn.recv(1024).decode("utf-8").strip()
+            if data == "EXIT":
+                break
+            if data:
+                try:
+                    img = Image.open(data)
+                    text = mocr(img)
+                    payload = annotate(text)
+                    conn.sendall(
+                        json.dumps(payload, ensure_ascii=False).encode("utf-8")
+                    )
+                except Exception as e:  # noqa: BLE001 - report to client, keep serving
+                    conn.sendall(f"ERROR: {e}".encode("utf-8"))
+        finally:
+            conn.close()
+finally:
+    cleanup()

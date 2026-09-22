@@ -1,11 +1,20 @@
 #!/bin/bash
 
-if pgrep -x "wf-recorder" > /dev/null; then
-    pkill -SIGINT -x "wf-recorder"
-    notify-send "Recording" "Stopped and saved to ~/Videos" -i video-display
-    exit 0
+if pgrep -x "wf-recorder" >/dev/null; then
+  pkill -SIGINT -x "wf-recorder"
+  notify-send "Recording" "Stopped and saved to ~/Videos" -i video-display
+  "$HOME/.local/bin/notify-phone" "Recording stopped" "Saved to ~/Videos" video_camera
+  exit 0
+fi
+
+SAREA="$(slurp)"
+if [[ -z "$SAREA" ]]; then
+  exit 0
 fi
 
 FILENAME="$HOME/Videos/recording_$(date +%F_%H-%M-%S).mp4"
 
-wf-recorder -g "$(slurp)" -f "$FILENAME"
+notify-send "Recording" "Started" -i video-display
+"$HOME/.local/bin/notify-phone" "Recording started" "$(basename "$FILENAME")" video_camera
+
+wf-recorder -g "$GEOMETRY" -f "$FILENAME"
