@@ -1,0 +1,10 @@
+[workspace]
+resolver = "2"
+members = ["mouse-sensitivity", "ambient-brightness"]
+
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

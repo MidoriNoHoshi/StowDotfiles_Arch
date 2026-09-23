@@ -65,6 +65,7 @@ gst-plugin-pipewire
 gvfs-mtp
 hakuneko-desktop-bin
 htop
+hypridle
 hyprland
 hyprpaper
 hyprpicker

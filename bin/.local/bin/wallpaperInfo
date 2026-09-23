@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-sleep 1
 Bat0_Path="/sys/class/power_supply/BAT0"
 if [[ -r "$Bat0_Path/status" && -r "$Bat0_Path/capacity" ]]; then
   Status=$(<"$Bat0_Path/status")
@@ -23,8 +22,17 @@ Notify() {
 
 Latitude="34.6937N"
 Longitude="135.5023E"
-Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude" | head -n1)
-Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude" | head -n1)
+# Dawn/dusk only change once a day, so cache them instead of running sunwait
+# on every timer tick.
+sunCache="/run/user/$UID/wallpaperInfo-sun-$(date +%F)"
+if [[ -r "$sunCache" ]]; then
+  read -r Dawn Dusk <"$sunCache"
+else
+  rm -f /run/user/$UID/wallpaperInfo-sun-*
+  Dawn=$(sunwait list civil dawn "$Latitude" "$Longitude" | head -n1)
+  Dusk=$(sunwait list civil dusk "$Latitude" "$Longitude" | head -n1)
+  echo "$Dawn $Dusk" >"$sunCache"
+fi
 
 # Fixed: Enforced base-10 calculation by stripping leading zeros from both hours and minutes
 Nowtime=$(( 10#$(date +%H)*60 + 10#$(date +%M) ))

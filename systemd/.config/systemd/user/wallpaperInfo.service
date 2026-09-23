@@ -4,4 +4,4 @@ Description=Wallpaper Manager (battery + time)
 [Service]
 Type=oneshot
 PassEnvironment=HYPRLAND_INSTANCE_SIGNATURE WAYLAND_DISPLAY DISPLAY
-ExecStart=%h/dotfiles/Scripts/Linux-Information-Notification-Scripts/wallpaperInfo.sh
+ExecStart=%h/.local/bin/wallpaperInfo

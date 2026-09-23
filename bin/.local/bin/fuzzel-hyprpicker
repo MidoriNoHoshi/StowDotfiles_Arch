@@ -16,7 +16,6 @@ ICONS_DIR="$CONFIG_DIR/icons"
 # Create directories and history if they don't exist
 mkdir -p "$ICONS_DIR"
 touch "$HISTORY_FILE"
-oyu
 function create_eye_dropper_svg() {
   local color="#C8D1EE"
   local icon_path="$ICONS_DIR/eyedropper.svg"

@@ -1,13 +1,12 @@
 [Unit]
-Description=Run wallpaper information script every minute
+Description=Re-evaluate wallpaper (time of day / low battery) every 5 minutes
 
 [Timer]
-OnBootSec=30s
-OnCalendar=*:0/1
-; OnBootSec=30s
-; OnUnitActiveSec=60s
+OnCalendar=*:0/5
+# Let systemd batch this wakeup with others instead of waking the CPU exactly
+# on the minute.
+AccuracySec=1min
 Unit=wallpaperInfo.service
-; Persistent=true
 
 [Install]
 WantedBy=timers.target

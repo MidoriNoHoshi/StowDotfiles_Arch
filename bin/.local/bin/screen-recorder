@@ -17,4 +17,4 @@ FILENAME="$HOME/Videos/recording_$(date +%F_%H-%M-%S).mp4"
 notify-send "Recording" "Started" -i video-display
 "$HOME/.local/bin/notify-phone" "Recording started" "$(basename "$FILENAME")" video_camera
 
-wf-recorder -g "$GEOMETRY" -f "$FILENAME"
+wf-recorder -g "$SAREA" -f "$FILENAME"

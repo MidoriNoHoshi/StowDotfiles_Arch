@@ -2,7 +2,10 @@
 """
 manga-ocr daemon — loads the OCR model, a MeCab tagger, and a JMdict lookup
 once, then serves annotated OCR requests over a Unix socket. Meant to run as
-a systemd --user service; see manga-ocr-daemon.service.
+a socket-activated systemd --user service (manga-ocr-daemon.socket): the
+model is only loaded on the first request, and the daemon exits again after
+IDLE_EXIT_SEC without requests so the ~1 GB model isn't held all day.
+Run by hand it binds the socket itself and never idles out.
 
 Protocol: client connects, sends an image file path (utf-8, no trailing
 newline needed). Daemon replies with either:
@@ -28,6 +31,14 @@ from manga_ocr import MangaOcr
 
 RUNTIME_DIR = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
 SOCKET_PATH = os.path.join(RUNTIME_DIR, "manga_ocr.sock")
+IDLE_EXIT_SEC = 30 * 60
+SD_LISTEN_FDS_START = 3
+
+# systemd socket activation: the listening socket is handed over as fd 3.
+SOCKET_ACTIVATED = (
+    os.environ.get("LISTEN_PID") == str(os.getpid())
+    and os.environ.get("LISTEN_FDS") == "1"
+)
 
 KANJI_RE = re.compile(r"[\u4e00-\u9fff]")
 # unidic pos1 categories worth looking up a meaning for; skips particles,
@@ -36,7 +47,9 @@ CONTENT_POS = {"名詞", "動詞", "形容詞", "副詞", "形状詞", "連体�
 
 
 def cleanup(*_args):
-    if os.path.exists(SOCKET_PATH):
+    # When socket-activated, systemd owns the socket file; leave it in place so
+    # the next capture starts us again.
+    if not SOCKET_ACTIVATED and os.path.exists(SOCKET_PATH):
         os.remove(SOCKET_PATH)
     sys.exit(0)
 
@@ -44,7 +57,7 @@ def cleanup(*_args):
 signal.signal(signal.SIGTERM, cleanup)
 signal.signal(signal.SIGINT, cleanup)
 
-if os.path.exists(SOCKET_PATH):
+if not SOCKET_ACTIVATED and os.path.exists(SOCKET_PATH):
     os.remove(SOCKET_PATH)
 
 print("Loading manga-ocr model into memory...", flush=True)
@@ -114,16 +127,25 @@ def annotate(text: str) -> dict:
     return {"text": text, "furigana": "".join(furigana_parts), "words": words}
 
 
-server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-server.bind(SOCKET_PATH)
-os.chmod(
-    SOCKET_PATH, 0o600
-)  # single-user box, but no reason to leave it world-writable
-server.listen(1)
+if SOCKET_ACTIVATED:
+    server = socket.socket(fileno=SD_LISTEN_FDS_START)
+    server.settimeout(IDLE_EXIT_SEC)
+else:
+    server = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+    server.bind(SOCKET_PATH)
+    os.chmod(
+        SOCKET_PATH, 0o600
+    )  # single-user box, but no reason to leave it world-writable
+    server.listen(1)
 
 try:
     while True:
-        conn, _ = server.accept()
+        try:
+            conn, _ = server.accept()
+        except TimeoutError:
+            print(f"Idle for {IDLE_EXIT_SEC}s, exiting.", flush=True)
+            break
+        conn.settimeout(None)
         try:
             data = conn.recv(1024).decode("utf-8").strip()
             if data == "EXIT":

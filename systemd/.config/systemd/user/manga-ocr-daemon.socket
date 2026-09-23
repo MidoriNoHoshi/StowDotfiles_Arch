@@ -1,0 +1,9 @@
+[Unit]
+Description=manga-ocr daemon socket (starts the daemon on first OCR capture)
+
+[Socket]
+ListenStream=%t/manga_ocr.sock
+SocketMode=0600
+
+[Install]
+WantedBy=sockets.target
