@@ -1,0 +1,21 @@
+# ntfy server config (mounted into the container by compose.yml). Docs: https://docs.ntfy.sh/config/
+# No accounts: the server is only reachable from this laptop and devices on your tailnet (see
+# SETUP-NOTES.txt), so knowing the topic is enough, like on ntfy.sh.
+
+listen-http: ":80"
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "24h"
+
+# File attachments (e.g. the OpenPTRS launcher's story e-books). base-url is the address the phone
+# downloads them from: this laptop's Tailscale name (`tailscale status`; `tailscale serve` only answers
+# requests addressed to the name, not the bare 100.x IP).
+base-url: "http://druvas-laptop.tailf15066.ts.net:8090"
+attachment-cache-dir: "/var/cache/ntfy/attachments"
+attachment-file-size-limit: "50M"
+attachment-expiry-duration: "168h"
+
+# No daily message cap (why this is self-hosted: ntfy.sh's free tier limits messages per day).
+visitor-message-daily-limit: 0
+# Everything arrives through localhost (scripts directly, the phone via `tailscale serve`), which Docker
+# shows as its bridge network: exempt it from the per-client burst limit so fast runs aren't throttled.
+visitor-request-limit-exempt-hosts: "127.0.0.1,172.16.0.0/12"

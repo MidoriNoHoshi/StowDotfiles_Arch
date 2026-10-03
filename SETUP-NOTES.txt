@@ -2,7 +2,7 @@ Machine-specific setup — NOT stowed, NOT tracked in git
 =========================================================
 
 Some scripts in this repo need one secret value that must never be
-committed here: the ntfy.sh topic used for phone push notifications.
+committed here: the ntfy topic used for phone push notifications.
 On the free public ntfy.sh server, knowing the topic string is enough to
 publish to it (and read from it) — not a password-strength secret, but
 still not something to leave sitting in git history forever, especially
@@ -21,9 +21,58 @@ One-time setup on a fresh machine
     echo "$NEW_TOPIC"
 
 Then install the ntfy app (Android/iOS/F-Droid) and subscribe to that
-exact string. That's the whole setup — no account, no server config.
+exact string (on your own server, see below).
 
 If you ever suspect the topic leaked (e.g. it ended up in a screenshot,
 a shared clipboard, etc.), just repeat the steps above with a new random
 string and re-subscribe on your phone — nothing else references the old
 one, so there's nothing else to update.
+
+
+Self-hosted ntfy server (no daily message limit)
+=================================================
+
+File:     ~/.config/ntfy-server  (plain text, the server URL:
+          http://localhost:8090). Without it, notify-phone and the OpenPTRS
+          launcher fall back to the public https://ntfy.sh.
+Server:   ntfy/ package (stowed to ~/.config/ntfy/): one Docker container,
+          bound to localhost only; restarts with Docker after every reboot.
+Phone:    reaches it over Tailscale, so the same address works on every
+          Wi-Fi and on mobile data, and nobody else on a (public) Wi-Fi can.
+
+One-time setup on a fresh machine
+----------------------------------
+    stow ntfy
+    docker compose -f ~/.config/ntfy/compose.yml up -d
+    echo http://localhost:8090 > ~/.config/ntfy-server
+    sudo tailscale serve --bg --http 8090 http://127.0.0.1:8090
+    tailscale status                     # this laptop's name -> the phone's server address
+
+Phone (Android): install Tailscale and log in with the same account. In the
+ntfy app: Settings > Default server = http://<laptop>.<tailnet>.ts.net:8090
+(the NAME, e.g. http://druvas-laptop.tailf15066.ts.net:8090: `tailscale serve`
+does not answer the bare 100.x IP), subscribe to the topic, keep "instant
+delivery" on (the app keeps its own connection; no Google push needed).
+The Tailscale app must be connected: the phone then talks from a 100.x address.
+server.yml's base-url must be that same name (attachment download links).
+
+Check it:  curl -s localhost:8090/v1/health   ->  {"healthy":true}
+
+
+Anthropic API key (online OCR pass) — optional
+================================================
+
+File:     ~/.config/anthropic-api-key  (plain text, just the key, chmod 600)
+Used by:  bin/.local/bin/ocr-enhance — called from ocr-capture after the
+          local manga-ocr result is shown. When online, Claude re-reads the
+          screenshot, fixes OCR/furigana mistakes, and adds a translation;
+          the notification and clipboard are replaced with that version.
+          Without the file (or offline) ocr-capture behaves as before.
+
+One-time setup on a fresh machine
+----------------------------------
+    ~/.local/share/manga-ocr-venv/bin/pip install anthropic
+    (umask 077; printf '%s' 'sk-ant-...' > ~/.config/anthropic-api-key)
+
+Model defaults to claude-haiku-4-5 (cheapest); override with OCR_ENHANCE_MODEL. Errors
+land in $XDG_RUNTIME_DIR/ocr-enhance.log.

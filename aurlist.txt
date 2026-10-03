@@ -21,6 +21,7 @@ python312
 qimgv
 rmlint
 rtw88-dkms-git
+sunshine-bin
 sunwait
 tikzit
 ttf-hanazono

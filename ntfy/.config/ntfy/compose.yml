@@ -1,0 +1,29 @@
+# Self-hosted ntfy (phone push notifications) for notify-phone, the OpenPTRS launcher and any other
+# script. Stowed to ~/.config/ntfy/. Start it once; Docker brings it back after every reboot:
+#     docker compose -f ~/.config/ntfy/compose.yml up -d
+# Scripts on this laptop publish to http://localhost:8090. Only localhost is bound (not the Wi-Fi you're
+# on, which may be public); Tailscale forwards tailnet traffic to it, once:
+#     tailscale serve --bg --http 8090 http://127.0.0.1:8090
+# so the phone subscribes at http://<laptop's tailscale IP>:8090 (`tailscale ip -4`), the same address on
+# every Wi-Fi and on mobile data.
+services:
+  ntfy:
+    image: binwiederhier/ntfy
+    container_name: ntfy
+    command: serve
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8090:80"
+    volumes:
+      - ./server.yml:/etc/ntfy/server.yml:ro
+      - ntfy-cache:/var/cache/ntfy       # messages kept for a phone that was offline
+    environment:
+      - TZ=Asia/Tokyo
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --tries=1 http://localhost:80/v1/health -O - | grep -q '\"healthy\":true'"]
+      interval: 60s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  ntfy-cache:

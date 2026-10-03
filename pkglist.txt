@@ -65,7 +65,6 @@ gst-plugin-pipewire
 gvfs-mtp
 hakuneko-desktop-bin
 htop
-hypridle
 hyprland
 hyprpaper
 hyprpicker
@@ -162,6 +161,7 @@ socat
 sof-firmware
 sshfs
 stow
+sunshine-bin
 sunwait
 swaync
 systemd-resolvconf

@@ -1,30 +1,37 @@
 #!/usr/bin/env bash
-# Shared ntfy.sh push-notification helper.
+# Shared ntfy push-notification helper.
 # Usage: notify-phone "<title>" "<message>" [tag]
 #   tag is an optional ntfy emoji-tag shortcode (e.g. jp, video_camera,
 #   warning) — see https://docs.ntfy.sh/emojis/ for the full list.
 #
-# Topic lives in one place (~/.config/ntfy-topic) so every script that
-# wants to push to your phone shares it, rather than each script hardcoding
-# its own copy of the string.
+# Server and topic live in one place each, shared by every script (and the
+# OpenPTRS launcher) that pushes to your phone:
+#   ~/.config/ntfy-server  server URL; the self-hosted one (ntfy/ package) is
+#                          http://localhost:8090. Missing file = public https://ntfy.sh
+#   ~/.config/ntfy-topic   topic name
 set -euo pipefail
 
 TOPIC_FILE="${HOME}/.config/ntfy-topic"
+SERVER_FILE="${HOME}/.config/ntfy-server"
 
 if [[ ! -f "$TOPIC_FILE" ]]; then
   echo "notify-phone: no topic configured. Put your ntfy topic name in ${TOPIC_FILE}" >&2
   exit 1
 fi
 
-NTFY_TOPIC="$(<"$TOPIC_FILE")"
+NTFY_TOPIC="$(tr -d '[:space:]' < "$TOPIC_FILE")"
+NTFY_SERVER="https://ntfy.sh"
+if [[ -f "$SERVER_FILE" ]]; then
+  NTFY_SERVER="$(tr -d '[:space:]' < "$SERVER_FILE")"
+fi
 TITLE="${1:?usage: notify-phone <title> <message> [tag]}"
 MESSAGE="${2:?usage: notify-phone <title> <message> [tag]}"
 TAG="${3:-bell}"
 
 # -m 5 caps how long a dead connection can stall the calling script.
-# Failure here (no wifi, ntfy.sh down) is silent and never fails the caller.
+# Failure here (server down, no network) is silent and never fails the caller.
 curl -s -m 5 \
   -H "Title: ${TITLE}" \
   -H "Tags: ${TAG}" \
   --data-binary "${MESSAGE}" \
-  "https://ntfy.sh/${NTFY_TOPIC}" >/dev/null 2>&1 || true
+  "${NTFY_SERVER%/}/${NTFY_TOPIC}" >/dev/null 2>&1 || true

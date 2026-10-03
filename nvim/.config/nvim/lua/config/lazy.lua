@@ -1,5 +1,5 @@
 local lazyroot = vim.fn.stdpath("data") .. "/lazy"
-if not vim.loop.fs_stat(lazyroot .. "/lazy.nvim") then
+if not vim.uv.fs_stat(lazyroot .. "/lazy.nvim") then
   vim.fn.system({
     "git",
     "clone",
@@ -14,7 +14,7 @@ vim.opt.rtp:prepend(lazyroot .. "/lazy.nvim")
 require("lazy").setup({
   spec = {
     { "LazyVim/LazyVim", import = "lazyvim.plugins" },
-    
+
     -- Language & Tooling Extras
     { import = "lazyvim.plugins.extras.lang.markdown" },
     { import = "lazyvim.plugins.extras.lang.typescript" }, -- JS / TS / JSX / TSX
@@ -22,9 +22,9 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.lang.python" },
     { import = "lazyvim.plugins.extras.lang.astro" },
     { import = "lazyvim.plugins.extras.lang.ruby" },
-    { import = "lazyvim.plugins.extras.lang.tex" },       -- LaTeX
+    { import = "lazyvim.plugins.extras.lang.tex" }, -- LaTeX
     { import = "lazyvim.plugins.extras.formatting.prettier" }, -- Prettier for HTML/CSS/JS/Astro
-    
+
     -- Import custom user plugins from lua/plugins/
     { import = "plugins" },
   },
@@ -32,4 +32,3 @@ require("lazy").setup({
   install = { colorscheme = { "tokyonight", "habamax" } },
   checker = { enabled = true },
 })
-

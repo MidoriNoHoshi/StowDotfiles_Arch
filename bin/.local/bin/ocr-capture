@@ -60,7 +60,8 @@ for w in words:
     meaning_lines.append(f"{w['surface']}{reading}: {gloss}")
 
 meanings_block = "\n".join(meaning_lines)
-print(f"{furigana}\x1e{meanings_block}", end="")
+text = payload.get("text") or ""
+print(f"{furigana}\x1e{meanings_block}\x1e{text}", end="")
 PYEOF
 )"
 
@@ -75,7 +76,9 @@ if [[ "$RESULT" == ERROR:* ]]; then
 fi
 
 NOTIFY_TEXT="${RESULT%%$'\x1e'*}"
-MEANINGS_TEXT="${RESULT#*$'\x1e'}"
+REST="${RESULT#*$'\x1e'}"
+MEANINGS_TEXT="${REST%%$'\x1e'*}"
+LOCAL_TEXT="${REST#*$'\x1e'}"
 
 CLIP_TEXT="${NOTIFY_TEXT}"
 if [[ -n "$MEANINGS_TEXT" ]]; then
@@ -84,7 +87,19 @@ if [[ -n "$MEANINGS_TEXT" ]]; then
 fi
 
 printf '%s' "$CLIP_TEXT" | wl-copy
-notify-send -t 6000 "OCR Text" "$NOTIFY_TEXT"
+# -p prints the notification id so the online pass below can replace it.
+NOTIFY_ID="$(notify-send -p -t 6000 "OCR Text" "$NOTIFY_TEXT")"
+
+# Online second pass: when there's network and an API key, Claude re-reads
+# the screenshot, fixes OCR/furigana mistakes, and translates. It fails fast
+# (no retries) when offline, in which case the local result above stands.
+ENHANCE_PY="$HOME/.local/share/manga-ocr-venv/bin/python3"
+if ENHANCED="$("$ENHANCE_PY" "$HOME/.local/bin/ocr-enhance" "${TMP_IMG}" "${LOCAL_TEXT}" 2>"${RUNTIME_DIR}/ocr-enhance.log")" \
+  && [[ -n "$ENHANCED" ]]; then
+  CLIP_TEXT="${ENHANCED#*$'\x1e'}"
+  printf '%s' "$CLIP_TEXT" | wl-copy
+  notify-send -r "$NOTIFY_ID" -t 15000 "OCR Text ✦ Claude" "${ENHANCED%%$'\x1e'*}"
+fi
 
 # Phone push via the shared notify-phone helper — sends the FULL text
 # (furigana + meanings), not the shortened desktop version, since there's

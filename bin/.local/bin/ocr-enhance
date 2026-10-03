@@ -1,0 +1,148 @@
+#!/usr/bin/env python3
+"""
+ocr-enhance — online second pass for ocr-capture. Sends the captured
+screenshot (plus manga-ocr's local guess as a hint) to Claude, which
+re-reads the text, fixes OCR mistakes, adds context-aware furigana and
+glosses, and translates it.
+
+Usage: ocr-enhance <image.png> [local-ocr-text]
+
+Prints "<notification text>\x1e<clipboard text>" on success, the same
+record-separator convention ocr-capture already uses. Exits non-zero with
+nothing on stdout when it can't help (offline, no API key, API error,
+refusal), so the caller just keeps the offline result.
+
+Runs under the manga-ocr venv's python, which has the `anthropic` package:
+    ~/.local/share/manga-ocr-venv/bin/pip install anthropic
+API key: $ANTHROPIC_API_KEY, or ~/.config/anthropic-api-key (see
+SETUP-NOTES.txt) — processes started from a Hyprland bind don't see your
+shell's environment, hence the file.
+"""
+
+import base64
+import os
+import sys
+
+import anthropic
+from pydantic import BaseModel
+
+# Haiku 4.5 is the cheapest current model with vision ($1 / $5 per million
+# input / output tokens) — a typical capture costs a fraction of a cent.
+MODEL = os.environ.get("OCR_ENHANCE_MODEL", "claude-haiku-4-5")
+KEY_FILE = os.path.expanduser("~/.config/anthropic-api-key")
+TIMEOUT_SEC = 30.0
+
+SYSTEM = """\
+You help an English-speaking Japanese learner read Japanese text captured \
+from a screenshot (usually a game, manga, or video subtitle).
+
+- Read the text from the image yourself. The local OCR guess you are given \
+often has wrong or missing characters; use it only as a hint. Preserve line \
+breaks where they are meaningful, drop stray UI noise.
+- furigana: the full corrected text, with every kanji word followed by its \
+reading in hiragana in ASCII parentheses, e.g. 今日(きょう)は雨(あめ)が降(ふ)る. \
+Choose readings from context (名前 as なまえ, 一人 as ひとり, names, counters, \
+rendaku). Leave kana-only words untouched.
+- translation: a natural English translation that keeps the tone.
+- words: the content words worth looking up, in order of appearance, \
+skipping particles and trivially common words. Give the reading in hiragana \
+and a short gloss for the meaning used in this context. For conjugated forms, \
+mention the dictionary form in the gloss (e.g. "went (行く)").
+- notes: at most two short sentences on grammar, slang, or nuance a learner \
+would likely miss. Empty string if nothing notable."""
+
+
+class Word(BaseModel):
+    surface: str
+    reading: str
+    gloss: str
+
+
+class Reading(BaseModel):
+    text: str
+    furigana: str
+    translation: str
+    words: list[Word]
+    notes: str
+
+
+def api_key() -> str | None:
+    if os.environ.get("ANTHROPIC_API_KEY"):
+        return os.environ["ANTHROPIC_API_KEY"]
+    try:
+        with open(KEY_FILE) as f:
+            return f.read().strip() or None
+    except OSError:
+        return None
+
+
+def main() -> int:
+    if len(sys.argv) < 2:
+        print("usage: ocr-enhance <image.png> [local-ocr-text]", file=sys.stderr)
+        return 2
+    img_path = sys.argv[1]
+    local_text = sys.argv[2] if len(sys.argv) > 2 else ""
+
+    key = api_key()
+    if not key:
+        return 1
+
+    with open(img_path, "rb") as f:
+        image_data = base64.standard_b64encode(f.read()).decode("ascii")
+
+    # No retries: when offline the connection error comes back instantly and
+    # the caller should fall back right away rather than wait out backoff.
+    client = anthropic.Anthropic(api_key=key, timeout=TIMEOUT_SEC, max_retries=0)
+    try:
+        response = client.messages.parse(
+            model=MODEL,
+            max_tokens=2000,
+            system=SYSTEM,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": "image/png",
+                                "data": image_data,
+                            },
+                        },
+                        {
+                            "type": "text",
+                            "text": f"Local OCR guess:\n{local_text or '(none)'}",
+                        },
+                    ],
+                }
+            ],
+            output_format=Reading,
+        )
+    except anthropic.APIConnectionError:
+        return 1  # offline / DNS failure / timeout — silent fallback
+    except anthropic.APIStatusError as e:
+        print(f"ocr-enhance: API error {e.status_code}: {e.message}", file=sys.stderr)
+        return 1
+
+    if response.stop_reason != "end_turn" or response.parsed_output is None:
+        print(f"ocr-enhance: stop_reason={response.stop_reason}", file=sys.stderr)
+        return 1
+
+    r = response.parsed_output
+    notify = f"{r.furigana}\n\n{r.translation}"
+
+    clip_parts = [r.furigana, r.translation]
+    if r.words:
+        clip_parts.append(
+            "\n".join(f"{w.surface}（{w.reading}）: {w.gloss}" for w in r.words)
+        )
+    if r.notes:
+        clip_parts.append(r.notes)
+
+    print(f"{notify}\x1e" + "\n\n".join(clip_parts), end="")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
